@@ -1,0 +1,7 @@
+{
+  "name": "BangunDesa - Bangun Indonesia",
+  "description": "Platform digital untuk pendataan dan identifikasi produk unggulan desa di seluruh Indonesia, memfasilitasi pemetaan ekonomi desa yang lebih akurat.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
