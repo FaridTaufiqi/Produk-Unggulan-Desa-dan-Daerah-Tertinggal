@@ -6,21 +6,46 @@ import { RegistrationForm } from './components/RegistrationForm';
 import { Footer } from './components/Footer';
 import { SubmissionSuccess } from './components/SubmissionSuccess';
 import { Dashboard } from './components/Dashboard';
-import { FormState } from './types';
-import { auth, db, collection, onSnapshot, query, orderBy, onAuthStateChanged, User } from './firebase';
+import { FormState, UserProfile } from './types';
+import { auth, db, collection, onSnapshot, query, orderBy, onAuthStateChanged, User, doc, getDoc, setDoc } from './firebase';
 
 const App: React.FC = () => {
   const [view, setView] = useState<'home' | 'dashboard'>('home');
   const [submitted, setSubmitted] = useState(false);
   const [submissionId, setSubmissionId] = useState('');
-  const [submissions, setSubmissions] = useState<(FormState & { id: string; timestamp: number })[]>([]);
+  const [submissions, setSubmissions] = useState<(FormState & { id: string; timestamp: number; uid: string })[]>([]);
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  // Handle Authentication
+  // Handle Authentication and Profile Sync
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      
+      if (firebaseUser) {
+        // Sync user profile with Firestore
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+          setUserProfile(userDoc.data() as UserProfile);
+        } else {
+          // Create new profile
+          const isAdmin = firebaseUser.email === 'faridtaufiqibusiness@gmail.com';
+          const newProfile: UserProfile = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            displayName: firebaseUser.displayName || '',
+            role: isAdmin ? 'admin' : 'desa'
+          };
+          await setDoc(userDocRef, newProfile);
+          setUserProfile(newProfile);
+        }
+      } else {
+        setUserProfile(null);
+      }
+      
       setIsAuthReady(true);
     });
     return () => unsubscribe();
@@ -28,23 +53,32 @@ const App: React.FC = () => {
 
   // Real-time Firestore Data Fetching
   useEffect(() => {
-    if (!isAuthReady || !user) {
+    if (!isAuthReady || !user || !userProfile) {
       setSubmissions([]);
       return;
     }
 
+    // Admin sees all, Desa sees only their own
     const q = query(collection(db, 'submissions'), orderBy('timestamp', 'desc'));
+    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({
         ...doc.data()
-      })) as (FormState & { id: string; timestamp: number })[];
-      setSubmissions(data);
+      })) as (FormState & { id: string; timestamp: number; uid: string })[];
+      
+      // Client-side filtering as a fallback if rules are complex, 
+      // but rules already handle this. We'll keep it for safety.
+      if (userProfile.role === 'admin') {
+        setSubmissions(data);
+      } else {
+        setSubmissions(data.filter(s => s.uid === user.uid));
+      }
     }, (error) => {
       console.error("Firestore Snapshot Error: ", error);
     });
 
     return () => unsubscribe();
-  }, [isAuthReady, user]);
+  }, [isAuthReady, user, userProfile]);
 
   const handleSuccess = (id: string) => {
     setSubmissionId(id);
@@ -58,12 +92,12 @@ const App: React.FC = () => {
   };
 
   if (view === 'dashboard') {
-    return <Dashboard data={submissions} onBack={() => setView('home')} user={user} />;
+    return <Dashboard data={submissions} onBack={() => setView('home')} user={user} userProfile={userProfile} />;
   }
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header onDashboardClick={() => setView('dashboard')} user={user} />
+      <Header onDashboardClick={() => setView('dashboard')} user={user} userProfile={userProfile} />
       
       <main className="flex-grow">
         {!submitted ? (
@@ -81,11 +115,11 @@ const App: React.FC = () => {
                       onClick={() => setView('dashboard')}
                       className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all border border-white/20"
                     >
-                      {user ? 'Lihat Statistik' : 'Login Admin'}
+                      {user ? 'Lihat Dashboard' : 'Login Petugas'}
                     </button>
                   </div>
                   <div className="p-8">
-                    <RegistrationForm onSuccess={handleSuccess} />
+                    <RegistrationForm onSuccess={handleSuccess} user={user} />
                   </div>
                 </div>
               </div>

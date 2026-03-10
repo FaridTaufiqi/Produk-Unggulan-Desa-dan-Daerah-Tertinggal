@@ -1,11 +1,25 @@
 {
   "entities": {
+    "User": {
+      "title": "User",
+      "description": "Profil pengguna (Admin atau Desa)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "desa"] },
+        "villageId": { "type": "string", "description": "Kode desa jika role adalah desa" }
+      },
+      "required": ["uid", "email", "role"]
+    },
     "Submission": {
       "title": "Submission",
       "description": "Data pendaftaran produk unggulan desa",
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "ID unik pendaftaran" },
+        "uid": { "type": "string", "description": "ID pengguna yang mendaftarkan" },
         "timestamp": { "type": "number", "description": "Waktu pendaftaran" },
         "kodeProvinsi": { "type": "string" },
         "provinsi": { "type": "string" },
@@ -33,6 +47,10 @@
     }
   },
   "firestore": {
+    "users": {
+      "schema": "User",
+      "description": "Koleksi profil pengguna"
+    },
     "submissions": {
       "schema": "Submission",
       "description": "Koleksi data pendaftaran produk desa"

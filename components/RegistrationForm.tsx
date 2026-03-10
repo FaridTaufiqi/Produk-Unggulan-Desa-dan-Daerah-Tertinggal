@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 import { FormState, LembagaEkonomiType, VillageProduct } from '../types';
 import { ProductInputGroup } from './ProductInputGroup';
-import { db, collection, addDoc } from '../firebase';
+import { db, collection, addDoc, User, signInWithPopup, googleProvider, auth } from '../firebase';
 
 interface RegistrationFormProps {
   onSuccess: (id: string) => void;
+  user: User | null;
 }
 
 enum OperationType {
@@ -78,7 +79,7 @@ const provinces = [
 
 const initialProduct: VillageProduct = { name: '', profileFile: null };
 
-export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess }) => {
+export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, user }) => {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<FormState>({
     kodeProvinsi: '',
@@ -97,6 +98,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess })
       { ...initialProduct }
     ]
   });
+
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Login Error: ", error);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -121,6 +130,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     setLoading(true);
 
     try {
@@ -130,6 +140,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess })
       const submissionData = {
         ...form,
         id,
+        uid: user.uid,
         timestamp: Date.now(),
         products: form.products.map(p => ({
           name: p.name,
@@ -146,6 +157,26 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess })
       handleFirestoreError(error, OperationType.CREATE, 'submissions');
     }
   };
+
+  if (!user) {
+    return (
+      <div className="py-12 text-center">
+        <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Login Diperlukan</h3>
+        <p className="text-slate-500 mb-6">Silakan login dengan akun Google Anda untuk mengisi formulir pendaftaran desa.</p>
+        <button 
+          onClick={handleLogin}
+          className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg"
+        >
+          Login dengan Google
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-10">

@@ -3,10 +3,18 @@
 // Assumed Data Model
 // ===============================================================
 //
+// Collection: users
+// Document ID: uid
+// Fields:
+//   - uid: string (required)
+//   - role: string (required) - 'admin' or 'desa'
+//   - email: string (required)
+//
 // Collection: submissions
 // Document ID: auto-generated
 // Fields:
 //   - id: string (required) - Registration ID
+//   - uid: string (required) - Submitter's UID
 //   - timestamp: number (required) - Submission time
 //   - provinsi: string (required)
 //   - kabupaten: string (required)
@@ -27,9 +35,20 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "faridtaufiqibusiness@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isDesa() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'desa';
+    }
+
     function isValidSubmission(data) {
-      return data.keys().hasAll(['id', 'timestamp', 'provinsi', 'kabupaten', 'kecamatan', 'desa', 'lembagaEkonomi', 'alamatLembaga']) &&
+      return data.keys().hasAll(['id', 'uid', 'timestamp', 'provinsi', 'kabupaten', 'kecamatan', 'desa', 'lembagaEkonomi', 'alamatLembaga']) &&
              data.id is string &&
+             data.uid == request.auth.uid &&
              data.timestamp is number &&
              data.provinsi is string &&
              data.kabupaten is string &&
@@ -40,15 +59,23 @@ service cloud.firestore {
              data.alamatLembaga.size() < 1000;
     }
 
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() && request.auth.uid == userId && 
+                    request.resource.data.role in ['admin', 'desa'] &&
+                    (request.resource.data.role == 'desa' || isAdmin());
+      allow update: if isAdmin();
+    }
+
     match /submissions/{submissionId} {
-      // Allow public creation for the registration form
-      allow create: if isValidSubmission(request.resource.data);
+      // Allow creation for authenticated users (Desa or Admin)
+      allow create: if isAuthenticated() && isValidSubmission(request.resource.data);
       
-      // Allow authenticated users to read for the dashboard
-      allow read: if isAuthenticated();
+      // Admin sees everything, Desa sees only their own
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
       
-      // Deny updates and deletes by default
-      allow update, delete: if false;
+      // Only admin can delete or update (if needed)
+      allow update, delete: if isAdmin();
     }
 
     match /test/connection {

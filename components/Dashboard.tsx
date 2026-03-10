@@ -15,18 +15,19 @@ import {
   Lock,
   LogOut
 } from 'lucide-react';
-import { FormState, LembagaEkonomiType } from '../types';
+import { FormState, LembagaEkonomiType, UserProfile } from '../types';
 import { User, auth, signInWithPopup, googleProvider } from '../firebase';
 
 interface DashboardProps {
   data: (FormState & { id: string; timestamp: number })[];
   onBack: () => void;
   user: User | null;
+  userProfile: UserProfile | null;
 }
 
 const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#8b5cf6'];
 
-export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userProfile }) => {
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
@@ -106,11 +107,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user }) => {
             </button>
             <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
               <LayoutDashboard className="text-red-600" />
-              Statistik & Backlog Desa
+              {userProfile?.role === 'admin' ? 'Statistik & Backlog Desa' : 'Dashboard Pendaftaran Desa'}
             </h1>
             <div className="flex items-center gap-2 mt-1">
               <img src={user.photoURL || ''} alt={user.displayName || ''} className="w-5 h-5 rounded-full" />
-              <p className="text-slate-500 text-sm">Petugas: <span className="font-bold text-slate-700">{user.displayName}</span></p>
+              <p className="text-slate-500 text-sm">
+                Petugas {userProfile?.role === 'admin' ? 'Pusat' : 'Desa'}: <span className="font-bold text-slate-700">{user.displayName}</span>
+              </p>
               <button onClick={handleLogout} className="text-xs text-red-600 hover:underline flex items-center gap-1 ml-2">
                 <LogOut size={12} />
                 Logout

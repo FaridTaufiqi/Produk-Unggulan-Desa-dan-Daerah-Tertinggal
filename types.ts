@@ -9,6 +9,16 @@ export enum LembagaEkonomiType {
   LAINNYA = 'Lainnya'
 }
 
+export type UserRole = 'admin' | 'desa';
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+  villageId?: string;
+}
+
 export interface VillageProduct {
   name: string;
   profileFile: File | null;

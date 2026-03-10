@@ -1,13 +1,15 @@
 
 import React from 'react';
 import { User, auth, signInWithPopup, googleProvider } from '../firebase';
+import { UserProfile } from '../types';
 
 interface HeaderProps {
   onDashboardClick: () => void;
   user: User | null;
+  userProfile: UserProfile | null;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onDashboardClick, user }) => {
+export const Header: React.FC<HeaderProps> = ({ onDashboardClick, user, userProfile }) => {
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
@@ -52,9 +54,13 @@ export const Header: React.FC<HeaderProps> = ({ onDashboardClick, user }) => {
                 onClick={onDashboardClick}
                 className="bg-red-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-red-700 transition-all shadow-md hover:shadow-lg active:scale-95"
               >
-                Statistik & Backlog
+                {userProfile?.role === 'admin' ? 'Statistik & Backlog' : 'Dashboard Desa'}
               </button>
               <div className="flex items-center gap-2 pl-4 border-l border-slate-200">
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-bold text-slate-900 leading-none">{user.displayName}</p>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold mt-1">{userProfile?.role}</p>
+                </div>
                 <img src={user.photoURL || ''} alt={user.displayName || ''} className="w-8 h-8 rounded-full border border-slate-200" />
                 <button onClick={handleLogout} className="text-xs font-bold text-slate-500 hover:text-red-600">Logout</button>
               </div>
@@ -64,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({ onDashboardClick, user }) => {
               onClick={handleLogin}
               className="bg-slate-900 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-slate-800 transition-all shadow-md hover:shadow-lg active:scale-95"
             >
-              Login Admin
+              Login Petugas
             </button>
           )}
         </nav>
