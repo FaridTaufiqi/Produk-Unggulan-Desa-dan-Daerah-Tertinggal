@@ -1,12 +1,80 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { FormState, LembagaEkonomiType, VillageProduct } from '../types';
 import { ProductInputGroup } from './ProductInputGroup';
-import { GoogleGenAI } from '@google/genai';
+import { db, collection, addDoc } from '../firebase';
 
 interface RegistrationFormProps {
   onSuccess: (id: string) => void;
 }
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: any;
+}
+
+const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: null, // Simplified for this component
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+};
+
+const provinces = [
+  { id: "11", name: "Aceh (NAD)" },
+  { id: "12", name: "Sumatera Utara" },
+  { id: "13", name: "Sumatera Barat" },
+  { id: "14", name: "Riau" },
+  { id: "15", name: "Jambi" },
+  { id: "16", name: "Sumatera Selatan" },
+  { id: "17", name: "Bengkulu" },
+  { id: "18", name: "Lampung" },
+  { id: "19", name: "Kepulauan Bangka Belitung" },
+  { id: "21", name: "Kepulauan Riau" },
+  { id: "31", name: "DKI Jakarta" },
+  { id: "32", name: "Jawa Barat" },
+  { id: "33", name: "Jawa Tengah" },
+  { id: "34", name: "DI Yogyakarta" },
+  { id: "35", name: "Jawa Timur" },
+  { id: "36", name: "Banten" },
+  { id: "51", name: "Bali" },
+  { id: "52", name: "Nusa Tenggara Barat (NTB)" },
+  { id: "53", name: "Nusa Tenggara Timur (NTT)" },
+  { id: "61", name: "Kalimantan Barat" },
+  { id: "62", name: "Kalimantan Tengah" },
+  { id: "63", name: "Kalimantan Selatan" },
+  { id: "64", name: "Kalimantan Timur" },
+  { id: "65", name: "Kalimantan Utara" },
+  { id: "71", name: "Sulawesi Utara" },
+  { id: "72", name: "Sulawesi Tengah" },
+  { id: "73", name: "Sulawesi Selatan" },
+  { id: "74", name: "Sulawesi Tenggara" },
+  { id: "75", name: "Gorontalo" },
+  { id: "76", name: "Sulawesi Barat" },
+  { id: "81", name: "Maluku" },
+  { id: "82", name: "Maluku Utara" },
+  { id: "91", name: "Papua" },
+  { id: "92", name: "Papua Barat" },
+  { id: "93", name: "Papua Selatan" },
+  { id: "94", name: "Papua Tengah" },
+  { id: "95", name: "Papua Pegunungan" },
+  { id: "96", name: "Papua Barat Daya" }
+];
 
 const initialProduct: VillageProduct = { name: '', profileFile: null };
 
@@ -32,7 +100,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'provinsi') {
+      const selectedProv = provinces.find(p => p.name === value);
+      setForm(prev => ({
+        ...prev,
+        provinsi: value,
+        kodeProvinsi: selectedProv ? selectedProv.id : ''
+      }));
+    } else {
+      setForm(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleProductChange = (index: number, field: keyof VillageProduct, value: any) => {
@@ -45,11 +123,28 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess })
     e.preventDefault();
     setLoading(true);
 
-    // Simulate API delay
-    setTimeout(() => {
+    try {
+      const id = `REG-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
+      
+      // Prepare data for Firestore (remove File objects)
+      const submissionData = {
+        ...form,
+        id,
+        timestamp: Date.now(),
+        products: form.products.map(p => ({
+          name: p.name,
+          description: p.description || ''
+        }))
+      };
+
+      await addDoc(collection(db, 'submissions'), submissionData);
+      
       setLoading(false);
-      onSuccess(`REG-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`);
-    }, 2000);
+      onSuccess(id);
+    } catch (error) {
+      setLoading(false);
+      handleFirestoreError(error, OperationType.CREATE, 'submissions');
+    }
   };
 
   return (
@@ -66,15 +161,22 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess })
             <label className="text-sm font-semibold text-slate-700">Provinsi</label>
             <div className="flex gap-2">
               <input 
-                type="text" name="kodeProvinsi" placeholder="Kode" required
-                className="w-24 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-                value={form.kodeProvinsi} onChange={handleChange}
+                type="text" name="kodeProvinsi" placeholder="Kode" readOnly
+                className="w-24 px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-500 font-medium outline-none cursor-default"
+                value={form.kodeProvinsi}
               />
-              <input 
-                type="text" name="provinsi" placeholder="Nama Provinsi" required
+              <select 
+                name="provinsi" 
+                required
                 className="flex-grow px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-                value={form.provinsi} onChange={handleChange}
-              />
+                value={form.provinsi} 
+                onChange={handleChange}
+              >
+                <option value="">Pilih Provinsi</option>
+                {provinces.map((prov) => (
+                  <option key={prov.id} value={prov.name}>{prov.name}</option>
+                ))}
+              </select>
             </div>
           </div>
 

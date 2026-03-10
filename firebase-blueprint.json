@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "Submission": {
+      "title": "Submission",
+      "description": "Data pendaftaran produk unggulan desa",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID unik pendaftaran" },
+        "timestamp": { "type": "number", "description": "Waktu pendaftaran" },
+        "kodeProvinsi": { "type": "string" },
+        "provinsi": { "type": "string" },
+        "kodeKabupaten": { "type": "string" },
+        "kabupaten": { "type": "string" },
+        "kodeKecamatan": { "type": "string" },
+        "kecamatan": { "type": "string" },
+        "kodeDesa": { "type": "string" },
+        "desa": { "type": "string" },
+        "lembagaEkonomi": { "type": "string" },
+        "lembagaEkonomiLainnya": { "type": "string" },
+        "alamatLembaga": { "type": "string" },
+        "products": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["id", "timestamp", "provinsi", "kabupaten", "kecamatan", "desa", "lembagaEkonomi", "alamatLembaga"]
+    }
+  },
+  "firestore": {
+    "submissions": {
+      "schema": "Submission",
+      "description": "Koleksi data pendaftaran produk desa"
+    }
+  }
+}

@@ -1,0 +1,58 @@
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: submissions
+// Document ID: auto-generated
+// Fields:
+//   - id: string (required) - Registration ID
+//   - timestamp: number (required) - Submission time
+//   - provinsi: string (required)
+//   - kabupaten: string (required)
+//   - kecamatan: string (required)
+//   - desa: string (required)
+//   - lembagaEkonomi: string (required)
+//   - alamatLembaga: string (required)
+//   - products: list (optional) - List of products
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isValidSubmission(data) {
+      return data.keys().hasAll(['id', 'timestamp', 'provinsi', 'kabupaten', 'kecamatan', 'desa', 'lembagaEkonomi', 'alamatLembaga']) &&
+             data.id is string &&
+             data.timestamp is number &&
+             data.provinsi is string &&
+             data.kabupaten is string &&
+             data.kecamatan is string &&
+             data.desa is string &&
+             data.lembagaEkonomi is string &&
+             data.alamatLembaga is string &&
+             data.alamatLembaga.size() < 1000;
+    }
+
+    match /submissions/{submissionId} {
+      // Allow public creation for the registration form
+      allow create: if isValidSubmission(request.resource.data);
+      
+      // Allow authenticated users to read for the dashboard
+      allow read: if isAuthenticated();
+      
+      // Deny updates and deletes by default
+      allow update, delete: if false;
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

@@ -11,7 +11,7 @@ export const Hero: React.FC = () => {
           <div className="space-y-8">
             <div>
               <span className="inline-block px-3 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-full uppercase tracking-wider mb-4">
-                Pendataan Digital 2024
+                Pendataan Digital
               </span>
               <h1 className="text-4xl lg:text-6xl font-extrabold text-slate-900 leading-tight">
                 Mari Bangun <br />
