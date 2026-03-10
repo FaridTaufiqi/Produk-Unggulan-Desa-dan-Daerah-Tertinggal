@@ -77,11 +77,31 @@ const provinces = [
   { id: "96", name: "Papua Barat Daya" }
 ];
 
-const initialProduct: VillageProduct = { name: '', profileFile: null };
+const SUPPORT_NEEDS = [
+  'Pelatihan & Peningkatan SDM',
+  'Bantuan Permodalan / Kredit',
+  'Sertifikasi Produk (Halal, PIRT, dll)',
+  'Pemasaran Digital & E-commerce',
+  'Penyediaan Alat Produksi / Mesin',
+  'Akses Bahan Baku',
+  'Lainnya'
+];
+
+const initialProduct: VillageProduct = { 
+  name: '', 
+  category: '', 
+  legalitas: [], 
+  omzetBulanan: '', 
+  kapasitasProduksi: '' 
+};
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, user }) => {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<FormState>({
+    namaResponden: '',
+    nikResponden: '',
+    noHpResponden: '',
+    jabatanResponden: '',
     kodeProvinsi: '',
     provinsi: '',
     kodeKabupaten: '',
@@ -90,13 +110,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
     kecamatan: '',
     kodeDesa: '',
     desa: '',
+    namaLembaga: '',
     lembagaEkonomi: LembagaEkonomiType.BUM_DESA,
+    nibLembaga: '',
+    tahunBerdiri: '',
     alamatLembaga: '',
     products: [
       { ...initialProduct },
       { ...initialProduct },
       { ...initialProduct }
-    ]
+    ],
+    kebutuhanDukungan: []
   });
 
   const handleLogin = async () => {
@@ -122,6 +146,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
     }
   };
 
+  const handleSupportNeedChange = (need: string) => {
+    const current = form.kebutuhanDukungan || [];
+    const next = current.includes(need)
+      ? current.filter(n => n !== need)
+      : [...current, need];
+    setForm(prev => ({ ...prev, kebutuhanDukungan: next }));
+  };
+
   const handleProductChange = (index: number, field: keyof VillageProduct, value: any) => {
     const newProducts = [...form.products];
     newProducts[index] = { ...newProducts[index], [field]: value };
@@ -136,16 +168,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
     try {
       const id = `REG-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
       
-      // Prepare data for Firestore (remove File objects)
+      // Prepare data for Firestore
       const submissionData = {
         ...form,
         id,
         uid: user.uid,
         timestamp: Date.now(),
-        products: form.products.map(p => ({
-          name: p.name,
-          description: p.description || ''
-        }))
       };
 
       await addDoc(collection(db, 'submissions'), submissionData);
@@ -179,128 +207,179 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-10">
-      {/* Geo-Location Section */}
+    <form onSubmit={handleSubmit} className="space-y-12">
+      {/* Section 1: Identitas Responden */}
       <div className="space-y-6">
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-          <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm">1</span>
-          <h3 className="text-lg font-bold text-slate-800">Informasi Wilayah</h3>
+        <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+          <div className="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center font-bold">1</div>
+          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Identitas Responden</h3>
         </div>
-        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Provinsi</label>
-            <div className="flex gap-2">
-              <input 
-                type="text" name="kodeProvinsi" placeholder="Kode" readOnly
-                className="w-24 px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-500 font-medium outline-none cursor-default"
-                value={form.kodeProvinsi}
-              />
-              <select 
-                name="provinsi" 
-                required
-                className="flex-grow px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-                value={form.provinsi} 
-                onChange={handleChange}
-              >
-                <option value="">Pilih Provinsi</option>
-                {provinces.map((prov) => (
-                  <option key={prov.id} value={prov.name}>{prov.name}</option>
-                ))}
-              </select>
-            </div>
+            <label className="text-sm font-semibold text-slate-700">Nama Lengkap (Sesuai KTP)</label>
+            <input 
+              type="text"
+              name="namaResponden"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.namaResponden}
+              onChange={handleChange}
+              required
+            />
           </div>
-
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Kabupaten/Kota</label>
-            <div className="flex gap-2">
-              <input 
-                type="text" name="kodeKabupaten" placeholder="Kode" required
-                className="w-24 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-                value={form.kodeKabupaten} onChange={handleChange}
-              />
-              <input 
-                type="text" name="kabupaten" placeholder="Nama Kabupaten" required
-                className="flex-grow px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-                value={form.kabupaten} onChange={handleChange}
-              />
-            </div>
+            <label className="text-sm font-semibold text-slate-700">NIK (Nomor Induk Kependudukan)</label>
+            <input 
+              type="text"
+              name="nikResponden"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.nikResponden}
+              onChange={handleChange}
+              required
+            />
           </div>
-
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Kecamatan</label>
-            <div className="flex gap-2">
-              <input 
-                type="text" name="kodeKecamatan" placeholder="Kode" required
-                className="w-24 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-                value={form.kodeKecamatan} onChange={handleChange}
-              />
-              <input 
-                type="text" name="kecamatan" placeholder="Nama Kecamatan" required
-                className="flex-grow px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-                value={form.kecamatan} onChange={handleChange}
-              />
-            </div>
+            <label className="text-sm font-semibold text-slate-700">Nomor HP / WhatsApp</label>
+            <input 
+              type="text"
+              name="noHpResponden"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.noHpResponden}
+              onChange={handleChange}
+              required
+            />
           </div>
-
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Desa/Kelurahan</label>
-            <div className="flex gap-2">
-              <input 
-                type="text" name="kodeDesa" placeholder="Kode" required
-                className="w-24 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-                value={form.kodeDesa} onChange={handleChange}
-              />
-              <input 
-                type="text" name="desa" placeholder="Nama Desa" required
-                className="flex-grow px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-                value={form.desa} onChange={handleChange}
-              />
-            </div>
+            <label className="text-sm font-semibold text-slate-700">Jabatan di Desa / Lembaga</label>
+            <input 
+              type="text"
+              name="jabatanResponden"
+              placeholder="Contoh: Kepala Desa, Ketua BUMDes"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.jabatanResponden}
+              onChange={handleChange}
+              required
+            />
           </div>
         </div>
       </div>
 
-      {/* Institution Section */}
+      {/* Section 2: Lokasi Desa */}
       <div className="space-y-6">
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-          <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm">2</span>
-          <h3 className="text-lg font-bold text-slate-800">Lembaga Ekonomi Desa</h3>
+        <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+          <div className="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center font-bold">2</div>
+          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Lokasi Desa</h3>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Jenis Lembaga</label>
+            <label className="text-sm font-semibold text-slate-700">Provinsi</label>
+            <select 
+              name="provinsi"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.provinsi}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Pilih Provinsi</option>
+              {provinces.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Kabupaten / Kota</label>
+            <input 
+              type="text"
+              name="kabupaten"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.kabupaten}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Kecamatan</label>
+            <input 
+              type="text"
+              name="kecamatan"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.kecamatan}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Nama Desa</label>
+            <input 
+              type="text"
+              name="desa"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.desa}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Section 3: Identitas Lembaga Ekonomi */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+          <div className="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center font-bold">3</div>
+          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Identitas Lembaga Ekonomi</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Nama Lembaga (BUMDes/Koperasi/Lainnya)</label>
+            <input 
+              type="text"
+              name="namaLembaga"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.namaLembaga}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Bentuk Lembaga</label>
             <select 
               name="lembagaEkonomi"
-              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
               value={form.lembagaEkonomi}
               onChange={handleChange}
+              required
             >
               {Object.values(LembagaEkonomiType).map(type => (
                 <option key={type} value={type}>{type}</option>
               ))}
             </select>
           </div>
-
-          {form.lembagaEkonomi === LembagaEkonomiType.LAINNYA && (
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700">Sebutkan Lainnya</label>
-              <input 
-                type="text" name="lembagaEkonomiLainnya" placeholder="..." required
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                value={form.lembagaEkonomiLainnya} onChange={handleChange}
-              />
-            </div>
-          )}
-
-          <div className="space-y-2 md:col-span-2">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">NIB (Nomor Induk Berusaha)</label>
+            <input 
+              type="text"
+              name="nibLembaga"
+              placeholder="Kosongkan jika belum memiliki"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.nibLembaga}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Tahun Berdiri</label>
+            <input 
+              type="text"
+              name="tahunBerdiri"
+              placeholder="Contoh: 2018"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.tahunBerdiri}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="md:col-span-2 space-y-2">
             <label className="text-sm font-semibold text-slate-700">Alamat Lengkap Lembaga</label>
             <textarea 
               name="alamatLembaga"
               rows={3}
-              placeholder="Jl. Raya Desa No. ..."
-              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none resize-none"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
               value={form.alamatLembaga}
               onChange={handleChange}
               required
@@ -309,18 +388,18 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
         </div>
       </div>
 
-      {/* Products Section */}
+      {/* Section 4: Produk Unggulan */}
       <div className="space-y-6">
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-          <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm">3</span>
-          <h3 className="text-lg font-bold text-slate-800">Produk Unggulan Desa</h3>
+        <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+          <div className="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center font-bold">4</div>
+          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Identifikasi Produk Unggulan</h3>
         </div>
-
+        <p className="text-sm text-slate-500 italic">Daftarkan maksimal 3 produk unggulan desa Anda yang paling potensial.</p>
         <div className="space-y-8">
-          {form.products.map((product, idx) => (
+          {form.products.map((product, index) => (
             <ProductInputGroup 
-              key={idx}
-              index={idx}
+              key={index}
+              index={index}
               product={product}
               onChange={handleProductChange}
             />
@@ -328,33 +407,48 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="pt-6 flex items-center justify-between border-t border-slate-100">
-        <p className="text-sm text-slate-500 italic max-w-xs">
-          Pastikan semua data yang diisi telah benar dan dokumen PDF yang diunggah valid.
-        </p>
+      {/* Section 5: Kebutuhan Dukungan */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+          <div className="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center font-bold">5</div>
+          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Kebutuhan Dukungan Pemerintah</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {SUPPORT_NEEDS.map(need => (
+            <label key={need} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors">
+              <input 
+                type="checkbox"
+                className="w-5 h-5 text-red-600 rounded focus:ring-red-500"
+                checked={form.kebutuhanDukungan.includes(need)}
+                onChange={() => handleSupportNeedChange(need)}
+              />
+              <span className="text-sm text-slate-700 font-medium">{need}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="pt-8 border-t border-slate-100">
         <button 
           type="submit"
           disabled={loading}
-          className={`flex items-center gap-2 bg-red-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all shadow-lg ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-700 hover:shadow-red-200 active:scale-95'}`}
+          className="w-full bg-red-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-red-700 transition-all shadow-lg hover:shadow-red-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
         >
           {loading ? (
             <>
-              <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Memproses...
+              Memproses Data...
             </>
           ) : (
-            <>
-              Simpan Data
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              </svg>
-            </>
+            <>Kirim Formulir Pendaftaran</>
           )}
         </button>
+        <p className="text-center text-xs text-slate-400 mt-4 uppercase tracking-widest font-bold">
+          Data akan diverifikasi oleh tim kementerian terkait
+        </p>
       </div>
     </form>
   );

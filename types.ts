@@ -21,11 +21,21 @@ export interface UserProfile {
 
 export interface VillageProduct {
   name: string;
-  profileFile: File | null;
+  category: string;
+  legalitas: string[];
+  omzetBulanan: string;
+  kapasitasProduksi: string;
   description?: string;
 }
 
 export interface FormState {
+  // Identitas Responden
+  namaResponden: string;
+  nikResponden: string;
+  noHpResponden: string;
+  jabatanResponden: string;
+
+  // Lokasi
   kodeProvinsi: string;
   provinsi: string;
   kodeKabupaten: string;
@@ -34,10 +44,18 @@ export interface FormState {
   kecamatan: string;
   kodeDesa: string;
   desa: string;
+
+  // Identitas Lembaga
+  namaLembaga: string;
   lembagaEkonomi: LembagaEkonomiType;
   lembagaEkonomiLainnya?: string;
+  nibLembaga: string;
+  tahunBerdiri: string;
   alamatLembaga: string;
+
+  // Produk & Kebutuhan
   products: VillageProduct[];
+  kebutuhanDukungan: string[];
 }
 
 export interface AnalysisResult {
