@@ -7,7 +7,7 @@ import { Footer } from './components/Footer';
 import { SubmissionSuccess } from './components/SubmissionSuccess';
 import { Dashboard } from './components/Dashboard';
 import { FormState, UserProfile } from './types';
-import { auth, db, collection, onSnapshot, query, orderBy, onAuthStateChanged, User, doc, getDoc, setDoc } from './firebase';
+import { auth, db, collection, onSnapshot, query, orderBy, onAuthStateChanged, User, doc, getDoc, setDoc, where } from './firebase';
 
 const App: React.FC = () => {
   const [view, setView] = useState<'home' | 'dashboard'>('home');
@@ -59,20 +59,29 @@ const App: React.FC = () => {
     }
 
     // Admin sees all, Desa sees only their own
-    const q = query(collection(db, 'submissions'), orderBy('timestamp', 'desc'));
+    // IMPORTANT: Query must match security rules to avoid permission errors
+    let q;
+    if (userProfile.role === 'admin') {
+      q = query(collection(db, 'submissions'), orderBy('timestamp', 'desc'));
+    } else {
+      // Remove orderBy to avoid composite index requirement for non-admin users
+      q = query(
+        collection(db, 'submissions'), 
+        where('uid', '==', user.uid)
+      );
+    }
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({
         ...doc.data()
       })) as (FormState & { id: string; timestamp: number; uid: string })[];
       
-      // Client-side filtering as a fallback if rules are complex, 
-      // but rules already handle this. We'll keep it for safety.
-      if (userProfile.role === 'admin') {
-        setSubmissions(data);
-      } else {
-        setSubmissions(data.filter(s => s.uid === user.uid));
-      }
+      // Sort client-side for non-admin users
+      const sortedData = userProfile.role === 'admin' 
+        ? data 
+        : data.sort((a, b) => b.timestamp - a.timestamp);
+        
+      setSubmissions(sortedData);
     }, (error) => {
       console.error("Firestore Snapshot Error: ", error);
     });
