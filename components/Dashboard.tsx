@@ -15,7 +15,8 @@ import {
   Lock,
   LogOut,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
 import { FormState, LembagaEkonomiType, UserProfile } from '../types';
 import { User, auth, signInWithPopup, googleProvider, db, doc, deleteDoc } from '../firebase';
@@ -60,6 +61,83 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
     } catch (error) {
       console.error("Logout Error: ", error);
     }
+  };
+
+  const handleDownloadCSV = () => {
+    if (data.length === 0) return;
+
+    // Define headers
+    const headers = [
+      'ID', 'Waktu', 'Nama Responden', 'NIK', 'No HP', 'Jabatan',
+      'Provinsi', 'Kabupaten', 'Kecamatan', 'Desa',
+      'Nama Lembaga', 'Bentuk Lembaga', 'Status Badan Hukum',
+      'No Telp Direktur', 'No Telp Sekretaris', 'Jumlah Karyawan',
+      'NPWP', 'NIB', 'Tahun Berdiri', 'Alamat',
+      'Penyertaan Modal', 'Bagi Hasil PADes', 'Media Sosial',
+      'Produk Unggulan', 'Kebutuhan Dukungan'
+    ];
+
+    // Map data to rows
+    const rows = data.map(item => {
+      const productsStr = item.products
+        .filter(p => p.name)
+        .map(p => `${p.name} (${p.category})`)
+        .join(' | ');
+      
+      const needsStr = (item.kebutuhanDukungan || []).join(' | ');
+
+      return [
+        item.id,
+        new Date(item.timestamp).toLocaleString('id-ID'),
+        item.namaResponden,
+        `'${item.nikResponden}`, // Force string in Excel
+        item.noHpResponden,
+        item.jabatanResponden,
+        item.provinsi,
+        item.kabupaten,
+        item.kecamatan,
+        item.desa,
+        item.namaLembaga,
+        item.lembagaEkonomi,
+        item.statusBadanHukum,
+        item.noTelpDirektur,
+        item.noTelpSekretaris,
+        item.jumlahKaryawan,
+        item.npwpLembaga,
+        item.nibLembaga,
+        item.tahunBerdiri,
+        item.alamatLembaga.replace(/\n/g, ' '),
+        item.penyertaanModal.replace(/\n/g, ' '),
+        item.bagiHasilPADes.replace(/\n/g, ' '),
+        item.mediaSosial,
+        productsStr,
+        needsStr
+      ];
+    });
+
+    // Create CSV content
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => {
+        const cellStr = String(cell || '');
+        // Escape quotes and wrap in quotes if contains comma or newline
+        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+          return `"${cellStr.replace(/"/g, '""')}"`;
+        }
+        return cellStr;
+      }).join(','))
+    ].join('\n');
+
+    // Download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `backlog_pendaftaran_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleDelete = async (docId: string) => {
@@ -280,9 +358,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
               <TrendingUp size={20} className="text-red-600" />
               Backlog Pendaftaran Terbaru
             </h3>
-            <span className="text-xs font-medium bg-slate-200 text-slate-600 px-2 py-1 rounded-full">
-              Menampilkan {data.length} entri
-            </span>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={handleDownloadCSV}
+                disabled={data.length === 0}
+                className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-all shadow-sm disabled:opacity-50"
+              >
+                <Download size={14} />
+                Unduh CSV
+              </button>
+              <span className="text-xs font-medium bg-slate-200 text-slate-600 px-2 py-1 rounded-full">
+                Menampilkan {data.length} entri
+              </span>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
