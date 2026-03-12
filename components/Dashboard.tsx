@@ -16,7 +16,10 @@ import {
   LogOut,
   Trash2,
   AlertCircle,
-  Download
+  Download,
+  FileSpreadsheet,
+  Copy,
+  Check
 } from 'lucide-react';
 import { FormState, LembagaEkonomiType, UserProfile } from '../types';
 import { User, auth, signInWithPopup, googleProvider, db, doc, deleteDoc } from '../firebase';
@@ -34,6 +37,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
   const [loginLoading, setLoginLoading] = React.useState(false);
   const [loginError, setLoginError] = React.useState<string | null>(null);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [showSpreadsheetLink, setShowSpreadsheetLink] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+
+  const exportUrl = `${window.location.origin}/api/export/csv`;
+  const importFormula = `=IMPORTDATA("${exportUrl}")`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(importFormula);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleLogin = async () => {
     if (loginLoading) return;
@@ -362,6 +376,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
             </h3>
             <div className="flex items-center gap-3">
               <button 
+                onClick={() => setShowSpreadsheetLink(!showSpreadsheetLink)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all shadow-sm"
+              >
+                <FileSpreadsheet size={14} />
+                Buka di Spreadsheet
+              </button>
+              <button 
                 onClick={handleDownloadCSV}
                 disabled={data.length === 0}
                 className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-all shadow-sm disabled:opacity-50"
@@ -374,6 +395,49 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
               </span>
             </div>
           </div>
+
+          {/* Spreadsheet Link Info */}
+          {showSpreadsheetLink && (
+            <div className="p-6 bg-blue-50 border-b border-blue-100 animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="max-w-3xl">
+                <h4 className="text-blue-900 font-bold mb-2 flex items-center gap-2">
+                  <FileSpreadsheet size={18} />
+                  Integrasi Google Sheets (Live Sync)
+                </h4>
+                <p className="text-sm text-blue-700 mb-4">
+                  Gunakan rumus di bawah ini di Google Sheets untuk mengimpor data secara otomatis. 
+                  Data akan diperbarui secara berkala oleh Google Sheets.
+                </p>
+                <div className="flex items-center gap-2 bg-white p-3 rounded-xl border border-blue-200 shadow-inner">
+                  <code className="flex-1 text-xs font-mono text-blue-600 break-all">
+                    {importFormula}
+                  </code>
+                  <button 
+                    onClick={handleCopyLink}
+                    className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors shrink-0"
+                    title="Salin Rumus"
+                  >
+                    {copied ? <Check size={18} /> : <Copy size={18} />}
+                  </button>
+                </div>
+                <div className="mt-4 flex gap-4 text-[10px] text-blue-500 font-medium">
+                  <div className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                    Otomatis Update
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                    Format CSV Standar
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                    Akses Langsung
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
