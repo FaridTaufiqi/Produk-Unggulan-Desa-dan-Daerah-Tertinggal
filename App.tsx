@@ -13,7 +13,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<'home' | 'dashboard'>('home');
   const [submitted, setSubmitted] = useState(false);
   const [submissionId, setSubmissionId] = useState('');
-  const [submissions, setSubmissions] = useState<(FormState & { id: string; timestamp: number; uid: string })[]>([]);
+  const [submissions, setSubmissions] = useState<(FormState & { id: string; timestamp: number; uid: string; docId: string })[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -73,8 +73,9 @@ const App: React.FC = () => {
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({
-        ...doc.data()
-      })) as (FormState & { id: string; timestamp: number; uid: string })[];
+        ...doc.data(),
+        docId: doc.id
+      })) as (FormState & { id: string; timestamp: number; uid: string; docId: string })[];
       
       // Sort client-side for non-admin users
       const sortedData = userProfile.role === 'admin' 

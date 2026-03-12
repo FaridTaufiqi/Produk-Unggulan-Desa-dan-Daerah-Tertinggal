@@ -13,13 +13,15 @@ import {
   Package,
   ArrowLeft,
   Lock,
-  LogOut
+  LogOut,
+  Trash2,
+  AlertCircle
 } from 'lucide-react';
 import { FormState, LembagaEkonomiType, UserProfile } from '../types';
-import { User, auth, signInWithPopup, googleProvider } from '../firebase';
+import { User, auth, signInWithPopup, googleProvider, db, doc, deleteDoc } from '../firebase';
 
 interface DashboardProps {
-  data: (FormState & { id: string; timestamp: number })[];
+  data: (FormState & { id: string; timestamp: number; docId: string; uid: string })[];
   onBack: () => void;
   user: User | null;
   userProfile: UserProfile | null;
@@ -28,11 +30,27 @@ interface DashboardProps {
 const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#8b5cf6'];
 
 export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userProfile }) => {
+  const [loginLoading, setLoginLoading] = React.useState(false);
+  const [loginError, setLoginError] = React.useState<string | null>(null);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+
   const handleLogin = async () => {
+    if (loginLoading) return;
+    setLoginLoading(true);
+    setLoginError(null);
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login Error: ", error);
+      if (error.code === 'auth/popup-blocked') {
+        setLoginError("Popup diblokir oleh browser. Silakan izinkan popup untuk login.");
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        // Ignore
+      } else {
+        setLoginError("Gagal login. Silakan coba lagi.");
+      }
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -41,6 +59,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
       await auth.signOut();
     } catch (error) {
       console.error("Logout Error: ", error);
+    }
+  };
+
+  const handleDelete = async (docId: string) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus data pendaftaran ini? Tindakan ini tidak dapat dibatalkan.')) {
+      return;
+    }
+
+    setDeletingId(docId);
+    try {
+      await deleteDoc(doc(db, 'submissions', docId));
+    } catch (error) {
+      console.error("Delete Error: ", error);
+      alert("Gagal menghapus data. Pastikan Anda memiliki izin yang cukup.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -54,11 +88,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Akses Terbatas</h2>
           <p className="text-slate-500 mb-8">Silakan login sebagai petugas untuk melihat statistik dan backlog pendaftaran.</p>
           
+          {loginError && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl">
+              {loginError}
+            </div>
+          )}
+
           <button 
             onClick={handleLogin}
-            className="w-full bg-red-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-red-700 transition-all shadow-lg shadow-red-100 flex items-center justify-center gap-2"
+            disabled={loginLoading}
+            className="w-full bg-red-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-red-700 transition-all shadow-lg shadow-red-100 flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            Login dengan Google
+            {loginLoading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Menghubungkan...
+              </>
+            ) : (
+              <>Login dengan Google</>
+            )}
           </button>
           
           <button 
@@ -242,11 +293,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
                   <th className="px-6 py-4 font-semibold">Lembaga</th>
                   <th className="px-6 py-4 font-semibold">Produk</th>
                   <th className="px-6 py-4 font-semibold">Status</th>
+                  <th className="px-6 py-4 font-semibold text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {data.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
+                  <tr key={item.docId} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-slate-900">{item.id}</p>
                       <p className="text-xs text-slate-400">{new Date(item.timestamp).toLocaleString('id-ID')}</p>
@@ -275,11 +327,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
                         Terverifikasi
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-right">
+                      <button 
+                        onClick={() => handleDelete(item.docId)}
+                        disabled={deletingId === item.docId}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
+                        title="Hapus Pendaftaran"
+                      >
+                        {deletingId === item.docId ? (
+                          <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 size={18} />
+                        )}
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {data.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
+                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
                       Belum ada data pendaftaran yang masuk.
                     </td>
                   </tr>

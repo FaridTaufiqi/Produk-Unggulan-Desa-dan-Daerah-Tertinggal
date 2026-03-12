@@ -37,33 +37,60 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
           (request.auth.token.email == "faridtaufiqibusiness@gmail.com" && request.auth.token.email_verified == true));
     }
 
     function isDesa() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'desa';
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'desa';
     }
 
     function isValidSubmission(data) {
-      return data.keys().hasAll(['id', 'uid', 'timestamp', 'provinsi', 'kabupaten', 'kecamatan', 'desa', 'lembagaEkonomi', 'alamatLembaga']) &&
-             data.id is string &&
+      let requiredFields = [
+        'id', 'uid', 'timestamp', 'provinsi', 'kabupaten', 'kecamatan', 'desa', 
+        'lembagaEkonomi', 'alamatLembaga', 'namaResponden', 'nikResponden', 
+        'noHpResponden', 'jabatanResponden', 'namaLembaga', 'tahunBerdiri',
+        'statusBadanHukum', 'noTelpDirektur', 'noTelpSekretaris', 'jumlahKaryawan',
+        'npwpLembaga', 'penyertaanModal', 'bagiHasilPADes'
+      ];
+      
+      return data.keys().hasAll(requiredFields) &&
              data.uid == request.auth.uid &&
              data.timestamp is number &&
+             data.id is string &&
+             data.namaResponden is string && data.namaResponden.size() > 0 && data.namaResponden.size() < 100 &&
+             data.nikResponden is string && data.nikResponden.size() == 16 &&
+             data.noHpResponden is string && data.noHpResponden.size() > 0 && data.noHpResponden.size() < 20 &&
+             data.jabatanResponden is string &&
              data.provinsi is string &&
              data.kabupaten is string &&
              data.kecamatan is string &&
              data.desa is string &&
+             data.namaLembaga is string &&
              data.lembagaEkonomi is string &&
-             data.alamatLembaga is string &&
-             data.alamatLembaga.size() < 1000;
+             data.statusBadanHukum is string &&
+             data.noTelpDirektur is string &&
+             data.noTelpSekretaris is string &&
+             (data.jumlahKaryawan is string || data.jumlahKaryawan is number) &&
+             data.npwpLembaga is string &&
+             data.penyertaanModal is string &&
+             data.bagiHasilPADes is string &&
+             data.tahunBerdiri is string &&
+             data.alamatLembaga is string && data.alamatLembaga.size() < 1000 &&
+             (!('products' in data) || data.products is list) &&
+             (!('kebutuhanDukungan' in data) || data.kebutuhanDukungan is list) &&
+             (!('mediaSosial' in data) || data.mediaSosial is string);
     }
 
     match /users/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
       allow create: if isAuthenticated() && request.auth.uid == userId && 
                     request.resource.data.role in ['admin', 'desa'] &&
-                    (request.resource.data.role == 'desa' || isAdmin());
+                    (request.resource.data.role == 'desa' || 
+                     (request.auth.token.email == "faridtaufiqibusiness@gmail.com" && request.auth.token.email_verified == true));
       allow update: if isAdmin();
     }
 
@@ -74,8 +101,8 @@ service cloud.firestore {
       // Admin sees everything, Desa sees only their own
       allow read: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
       
-      // Only admin can delete or update (if needed)
-      allow update, delete: if isAdmin();
+      // Admin can delete everything, Desa can delete their own
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
     }
 
     match /test/connection {

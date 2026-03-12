@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { FormState, LembagaEkonomiType, VillageProduct } from '../types';
+import { FormState, LembagaEkonomiType, VillageProduct, StatusBadanHukum } from '../types';
 import { ProductInputGroup } from './ProductInputGroup';
 import { db, collection, addDoc, User, signInWithPopup, googleProvider, auth } from '../firebase';
 
@@ -97,6 +97,8 @@ const initialProduct: VillageProduct = {
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, user }) => {
   const [loading, setLoading] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({
     namaResponden: '',
     nikResponden: '',
@@ -112,7 +114,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
     desa: '',
     namaLembaga: '',
     lembagaEkonomi: LembagaEkonomiType.BUM_DESA,
+    statusBadanHukum: StatusBadanHukum.BELUM_MENDAFTAR,
+    noTelpDirektur: '',
+    noTelpSekretaris: '',
+    jumlahKaryawan: '',
+    npwpLembaga: '',
     nibLembaga: '',
+    penyertaanModal: '',
+    bagiHasilPADes: '',
+    mediaSosial: '',
     tahunBerdiri: '',
     alamatLembaga: '',
     products: [
@@ -124,10 +134,22 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
   });
 
   const handleLogin = async () => {
+    if (loginLoading) return;
+    setLoginLoading(true);
+    setLoginError(null);
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login Error: ", error);
+      if (error.code === 'auth/popup-blocked') {
+        setLoginError("Popup diblokir oleh browser. Silakan izinkan popup untuk login.");
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        // Ignore, user just clicked again or closed it
+      } else {
+        setLoginError("Gagal login. Silakan coba lagi.");
+      }
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -196,11 +218,29 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
         </div>
         <h3 className="text-xl font-bold text-slate-900 mb-2">Login Diperlukan</h3>
         <p className="text-slate-500 mb-6">Silakan login dengan akun Google Anda untuk mengisi formulir pendaftaran desa.</p>
+        
+        {loginError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl max-w-md mx-auto">
+            {loginError}
+          </div>
+        )}
+
         <button 
           onClick={handleLogin}
-          className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg"
+          disabled={loginLoading}
+          className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
         >
-          Login dengan Google
+          {loginLoading ? (
+            <>
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Menghubungkan...
+            </>
+          ) : (
+            <>Login dengan Google</>
+          )}
         </button>
       </div>
     );
@@ -352,6 +392,66 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
             </select>
           </div>
           <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Status Badan Hukum</label>
+            <select 
+              name="statusBadanHukum"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.statusBadanHukum}
+              onChange={handleChange}
+              required
+            >
+              {Object.values(StatusBadanHukum).map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">No. Telp Direktur BUM Desa/Bersama</label>
+            <input 
+              type="text"
+              name="noTelpDirektur"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.noTelpDirektur}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">No. Telp Sekretaris/Bendahara</label>
+            <input 
+              type="text"
+              name="noTelpSekretaris"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.noTelpSekretaris}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Jumlah Karyawan / Kelompok Binaan</label>
+            <input 
+              type="number"
+              name="jumlahKaryawan"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.jumlahKaryawan}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">NPWP BUM Desa/Bersama</label>
+            <input 
+              type="text"
+              name="npwpLembaga"
+              placeholder="Bukan NPWP Pribadi atau Direktur"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.npwpLembaga}
+              onChange={handleChange}
+              required
+            />
+            <p className="text-[10px] text-slate-500 italic">*Bukan NPWP Pribadi atau NPWP Direktur</p>
+          </div>
+          <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700">NIB (Nomor Induk Berusaha)</label>
             <input 
               type="text"
@@ -363,6 +463,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
             />
           </div>
           <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Media Sosial</label>
+            <input 
+              type="text"
+              name="mediaSosial"
+              placeholder="Contoh: @bumdes_maju (Instagram/FB)"
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.mediaSosial}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700">Tahun Berdiri</label>
             <input 
               type="text"
@@ -370,6 +481,30 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
               placeholder="Contoh: 2018"
               className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
               value={form.tahunBerdiri}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="md:col-span-2 space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Total Penyertaan Modal Dana Desa</label>
+            <textarea 
+              name="penyertaanModal"
+              rows={2}
+              placeholder="Contoh: 2021 : Rp 50.000.000; 2022 : Rp 75.000.000; dst."
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.penyertaanModal}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="md:col-span-2 space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Total Bagi Hasil Keuntungan untuk PADes</label>
+            <textarea 
+              name="bagiHasilPADes"
+              rows={2}
+              placeholder="Contoh: 2021 : Rp 10.000.000; 2022 : Rp 30.000.000; dst."
+              className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              value={form.bagiHasilPADes}
               onChange={handleChange}
               required
             />

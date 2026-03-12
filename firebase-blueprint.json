@@ -21,6 +21,10 @@
         "id": { "type": "string", "description": "ID unik pendaftaran" },
         "uid": { "type": "string", "description": "ID pengguna yang mendaftarkan" },
         "timestamp": { "type": "number", "description": "Waktu pendaftaran" },
+        "namaResponden": { "type": "string" },
+        "nikResponden": { "type": "string" },
+        "noHpResponden": { "type": "string" },
+        "jabatanResponden": { "type": "string" },
         "kodeProvinsi": { "type": "string" },
         "provinsi": { "type": "string" },
         "kodeKabupaten": { "type": "string" },
@@ -29,8 +33,18 @@
         "kecamatan": { "type": "string" },
         "kodeDesa": { "type": "string" },
         "desa": { "type": "string" },
+        "namaLembaga": { "type": "string" },
         "lembagaEkonomi": { "type": "string" },
-        "lembagaEkonomiLainnya": { "type": "string" },
+        "statusBadanHukum": { "type": "string" },
+        "noTelpDirektur": { "type": "string" },
+        "noTelpSekretaris": { "type": "string" },
+        "jumlahKaryawan": { "type": "string" },
+        "npwpLembaga": { "type": "string" },
+        "nibLembaga": { "type": "string" },
+        "penyertaanModal": { "type": "string" },
+        "bagiHasilPADes": { "type": "string" },
+        "mediaSosial": { "type": "string" },
+        "tahunBerdiri": { "type": "string" },
         "alamatLembaga": { "type": "string" },
         "products": {
           "type": "array",
@@ -41,9 +55,13 @@
               "description": { "type": "string" }
             }
           }
+        },
+        "kebutuhanDukungan": {
+          "type": "array",
+          "items": { "type": "string" }
         }
       },
-      "required": ["id", "timestamp", "provinsi", "kabupaten", "kecamatan", "desa", "lembagaEkonomi", "alamatLembaga"]
+      "required": ["id", "timestamp", "provinsi", "kabupaten", "kecamatan", "desa", "lembagaEkonomi", "alamatLembaga", "statusBadanHukum", "noTelpDirektur", "noTelpSekretaris", "jumlahKaryawan", "npwpLembaga", "penyertaanModal", "bagiHasilPADes"]
     }
   },
   "firestore": {
