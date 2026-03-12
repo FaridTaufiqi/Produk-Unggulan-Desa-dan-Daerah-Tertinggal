@@ -91,8 +91,13 @@ const initialProduct: VillageProduct = {
   name: '', 
   category: '', 
   legalitas: [], 
-  omzetBulanan: '', 
-  kapasitasProduksi: '' 
+  kapasitasBulanan: '',
+  kapasitasTahunan: '',
+  deskripsi: '',
+  mitraUsaha: '',
+  totalPenjualan2025: '',
+  pangsaPasar: [],
+  fotoUrl: ''
 };
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, user }) => {

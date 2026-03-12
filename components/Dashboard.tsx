@@ -81,7 +81,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
     const rows = data.map(item => {
       const productsStr = item.products
         .filter(p => p.name)
-        .map(p => `${p.name} (${p.category})`)
+        .map((p, i) => {
+          return `[PRODUK ${i+1}] Nama: ${p.name}, Kategori: ${p.category}, Deskripsi: ${p.deskripsi}, Mitra: ${p.mitraUsaha}, Kapasitas: ${p.kapasitasBulanan}/bln & ${p.kapasitasTahunan}/thn, Penjualan 2025: ${p.totalPenjualan2025}, Pangsa Pasar: ${(p.pangsaPasar || []).join('/')}, Legalitas: ${(p.legalitas || []).join('/')}, Foto: ${p.fotoUrl || 'Tidak ada'}`;
+        })
         .join(' | ');
       
       const needsStr = (item.kebutuhanDukungan || []).join(' | ');

@@ -23,9 +23,13 @@ export interface VillageProduct {
   name: string;
   category: string;
   legalitas: string[];
-  omzetBulanan: string;
-  kapasitasProduksi: string;
-  description?: string;
+  kapasitasBulanan: string;
+  kapasitasTahunan: string;
+  deskripsi: string;
+  mitraUsaha: string;
+  totalPenjualan2025: string;
+  pangsaPasar: string[];
+  fotoUrl?: string;
 }
 
 export enum StatusBadanHukum {

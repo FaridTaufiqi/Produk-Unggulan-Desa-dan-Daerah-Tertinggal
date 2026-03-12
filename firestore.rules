@@ -22,7 +22,7 @@
 //   - desa: string (required)
 //   - lembagaEkonomi: string (required)
 //   - alamatLembaga: string (required)
-//   - products: list (optional) - List of products
+//   - products: list (optional) - List of products with fields: name, category, deskripsi, mitraUsaha, kapasitasBulanan, kapasitasTahunan, totalPenjualan2025, pangsaPasar, legalitas, fotoUrl
 //
 // ===============================================================
 

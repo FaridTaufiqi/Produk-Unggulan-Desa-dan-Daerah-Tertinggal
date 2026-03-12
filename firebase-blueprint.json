@@ -52,7 +52,15 @@
             "type": "object",
             "properties": {
               "name": { "type": "string" },
-              "description": { "type": "string" }
+              "category": { "type": "string" },
+              "deskripsi": { "type": "string" },
+              "mitraUsaha": { "type": "string" },
+              "kapasitasBulanan": { "type": "string" },
+              "kapasitasTahunan": { "type": "string" },
+              "totalPenjualan2025": { "type": "string" },
+              "pangsaPasar": { "type": "array", "items": { "type": "string" } },
+              "legalitas": { "type": "array", "items": { "type": "string" } },
+              "fotoUrl": { "type": "string", "description": "URL foto produk" }
             }
           }
         },
