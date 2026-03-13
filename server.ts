@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import admin from 'firebase-admin';
 import fs from 'fs';
+import { google } from 'googleapis';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +32,8 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  app.use(express.json());
+
   // Request logging
   app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
@@ -46,6 +49,66 @@ async function startServer() {
     res.json({
       appUrl: process.env.APP_URL || ''
     });
+  });
+
+  // Google Sheets Sync Endpoint
+  app.post('/api/sync/sheets', async (req, res) => {
+    const data = req.body;
+    const sheetId = process.env.GOOGLE_SHEET_ID || '1WnfajqpQe6-Jk1SakGtaQ7f_y6v-2yemxGVMuZcF0bc';
+    const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+
+    if (!serviceAccountJson) {
+      console.warn('GOOGLE_SERVICE_ACCOUNT_JSON not configured. Skipping sheet sync.');
+      return res.status(200).json({ status: 'skipped', message: 'Credentials not configured' });
+    }
+
+    try {
+      const credentials = JSON.parse(serviceAccountJson);
+      const auth = new google.auth.GoogleAuth({
+        credentials,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
+
+      const sheets = google.sheets({ version: 'v4', auth });
+      
+      const productsStr = (data.products || [])
+        .map((p: any) => `${p.name} (${p.category})`)
+        .join(', ');
+
+      const row = [
+        data.id,
+        new Date(data.timestamp).toLocaleString('id-ID'),
+        data.namaResponden,
+        data.nikResponden,
+        data.noHpResponden,
+        data.jabatanResponden,
+        data.provinsi,
+        data.kabupaten,
+        data.kecamatan,
+        data.desa,
+        data.namaLembaga,
+        data.lembagaEkonomi,
+        data.statusBadanHukum,
+        productsStr,
+        (data.kebutuhanDukungan || []).join(', '),
+        data.hasExportProduct || 'Tidak'
+      ];
+
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: sheetId,
+        range: 'Sheet1!A:P',
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [row],
+        },
+      });
+
+      console.log('Successfully synced to Google Sheets');
+      res.json({ status: 'success' });
+    } catch (error) {
+      console.error('Google Sheets Sync Error:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to sync to Google Sheets' });
+    }
   });
 
   // CSV Export Route for Spreadsheet (IMPORTDATA)

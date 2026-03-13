@@ -257,6 +257,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
 
       await addDoc(collection(db, 'submissions'), submissionData);
       
+      // Sync to Google Sheets (Background)
+      fetch('/api/sync/sheets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submissionData)
+      }).catch(err => console.error('Sheet Sync Error:', err));
+
       setLoading(false);
       onSuccess(id);
     } catch (error) {
