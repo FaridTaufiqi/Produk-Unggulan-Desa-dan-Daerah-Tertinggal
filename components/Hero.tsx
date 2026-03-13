@@ -11,15 +11,14 @@ export const Hero: React.FC = () => {
           <div className="space-y-8">
             <div>
               <span className="inline-block px-3 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-full uppercase tracking-wider mb-4">
-                Pendataan Digital
+                Formulir Identifikasi Produk
               </span>
-              <h1 className="text-4xl lg:text-6xl font-extrabold text-slate-900 leading-tight">
-                Mari Bangun <br />
-                <span className="text-red-600">Kedaulatan Ekonomi</span> <br />
-                dari Desa.
+              <h1 className="text-3xl lg:text-5xl font-extrabold text-slate-900 leading-tight">
+                Direktorat Promosi dan Pemasaran Produk Unggulan <br />
+                <span className="text-red-600">Desa dan Daerah Tertinggal</span>
               </h1>
-              <p className="mt-6 text-lg text-slate-600 max-w-xl">
-                Identifikasi dan kembangkan potensi terbaik desa Anda untuk pasar global. Platform resmi untuk pendataan Produk Unggulan Desa (Prudes) di seluruh wilayah Indonesia.
+              <p className="mt-6 text-base text-slate-600 max-w-xl leading-relaxed">
+                Formulir ini digunakan sebagai basis identifikasi pengembangan promosi dan pemasaran produk unggulan desa (Prudes) di seluruh Indonesia. Hasil formulir ini akan digunakan sebagai bagian pemetaan dan identifikasi kebijakan Kementerian Desa dan Daerah Tertinggal, khususnya untuk pengembangan promosi dan pemasaran serta mendorong agregasi produk unggulan desa (Prudes) menuju pasar global.
               </p>
             </div>
             
@@ -28,10 +27,7 @@ export const Hero: React.FC = () => {
                 onClick={() => document.getElementById('form-section')?.scrollIntoView({ behavior: 'smooth' })}
                 className="bg-red-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-red-700 transition-all shadow-xl hover:shadow-red-200 active:scale-95"
               >
-                Mulai Isi Formulir
-              </button>
-              <button className="bg-white text-slate-700 border border-slate-200 px-8 py-4 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all">
-                Lihat Statistik
+                Isi Formulir
               </button>
             </div>
 

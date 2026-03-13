@@ -104,6 +104,14 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
     }
 
+    match /catalog/{productId} {
+      // Public read access for the catalog
+      allow read: if true;
+      // Only authenticated users can create/update their own products
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
+    }
+
     match /test/connection {
       allow read: if true;
     }

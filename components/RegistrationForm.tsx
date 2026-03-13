@@ -257,6 +257,22 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
 
       await addDoc(collection(db, 'submissions'), submissionData);
       
+      // Add each product to the public catalog
+      const catalogPromises = form.products.filter(p => p.name).map(product => {
+        return addDoc(collection(db, 'catalog'), {
+          ...product,
+          uid: user.uid,
+          submissionId: id,
+          timestamp: Date.now(),
+          provinsi: form.provinsi,
+          kabupaten: form.kabupaten,
+          kecamatan: form.kecamatan,
+          desa: form.desa,
+          namaLembaga: form.namaLembaga
+        });
+      });
+      await Promise.all(catalogPromises);
+
       // Sync to Google Sheets (Background)
       fetch('/api/sync/sheets', {
         method: 'POST',
@@ -730,7 +746,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
               Memproses Data...
             </>
           ) : (
-            <>Kirim Formulir Pendaftaran</>
+            <>Kirim Formulir Identifikasi</>
           )}
         </button>
         <p className="text-center text-xs text-slate-400 mt-4 uppercase tracking-widest font-bold">

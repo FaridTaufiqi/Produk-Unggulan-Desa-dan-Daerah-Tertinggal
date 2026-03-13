@@ -16,8 +16,8 @@ export const Footer: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-white leading-none">Bangun<span className="text-red-600">Desa</span></span>
-                <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold mt-1">Bangun Indonesia</span>
+                <span className="text-xl font-bold text-white leading-none">Bangun Desa <span className="text-red-600">Bangun Indonesia</span></span>
+                <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold mt-1">Desa Terdepan Untuk Indonesia</span>
               </div>
             </div>
             <p className="max-w-md text-slate-400">
@@ -63,7 +63,7 @@ export const Footer: React.FC = () => {
         </div>
         
         <div className="pt-8 border-t border-slate-800 text-center text-xs text-slate-500">
-          <p>© 2024 BangunDesa - Kemendesa PDTT. Seluruh Hak Cipta Dilindungi.</p>
+          <p>© 2026 Bangun Desa Bangun Indonesia - Kemendesa PDTT. Seluruh Hak Cipta Dilindungi.</p>
         </div>
       </div>
     </footer>

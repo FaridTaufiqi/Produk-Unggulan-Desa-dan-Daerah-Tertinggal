@@ -70,6 +70,27 @@
         }
       },
       "required": ["id", "timestamp", "provinsi", "kabupaten", "kecamatan", "desa", "lembagaEkonomi", "alamatLembaga", "statusBadanHukum", "noTelpDirektur", "noTelpSekretaris", "jumlahKaryawan", "npwpLembaga", "penyertaanModal", "bagiHasilPADes"]
+    },
+    "CatalogProduct": {
+      "title": "CatalogProduct",
+      "description": "Produk desa yang dipublikasikan di katalog nasional",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "submissionId": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "deskripsi": { "type": "string" },
+        "provinsi": { "type": "string" },
+        "kabupaten": { "type": "string" },
+        "kecamatan": { "type": "string" },
+        "desa": { "type": "string" },
+        "namaLembaga": { "type": "string" },
+        "fotoUrl": { "type": "string" }
+      },
+      "required": ["uid", "name", "category", "provinsi", "kabupaten", "kecamatan", "desa", "namaLembaga"]
     }
   },
   "firestore": {
@@ -80,6 +101,10 @@
     "submissions": {
       "schema": "Submission",
       "description": "Koleksi data pendaftaran produk desa"
+    },
+    "catalog": {
+      "schema": "CatalogProduct",
+      "description": "Koleksi produk unggulan desa untuk publik"
     }
   }
 }

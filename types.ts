@@ -96,6 +96,18 @@ export interface FormState {
   exportProducts: ExportProduct[];
 }
 
+export interface CatalogProduct extends VillageProduct {
+  id: string;
+  uid: string;
+  submissionId: string;
+  timestamp: number;
+  provinsi: string;
+  kabupaten: string;
+  kecamatan: string;
+  desa: string;
+  namaLembaga: string;
+}
+
 export interface AnalysisResult {
   slogan: string;
   potential: string;

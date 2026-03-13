@@ -5,11 +5,12 @@ import { UserProfile } from '../types';
 
 interface HeaderProps {
   onDashboardClick: () => void;
+  onHomeClick: () => void;
   user: User | null;
   userProfile: UserProfile | null;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onDashboardClick, user, userProfile }) => {
+export const Header: React.FC<HeaderProps> = ({ onDashboardClick, onHomeClick, user, userProfile }) => {
   const [loginLoading, setLoginLoading] = React.useState(false);
 
   const handleLogin = async () => {
@@ -38,8 +39,11 @@ export const Header: React.FC<HeaderProps> = ({ onDashboardClick, user, userProf
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 flex items-center justify-center">
+        <div 
+          className="flex items-center gap-3 cursor-pointer group"
+          onClick={onHomeClick}
+        >
+          <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110">
             <img 
               src="https://upload.wikimedia.org/wikipedia/commons/a/ae/Kemendes_Logo_%282015%29.png" 
               alt="Logo Kemendes" 
@@ -47,15 +51,18 @@ export const Header: React.FC<HeaderProps> = ({ onDashboardClick, user, userProf
             />
           </div>
           <div className="border-l border-slate-200 pl-3 h-10 flex flex-col justify-center">
-            <span className="text-xl font-bold tracking-tight text-slate-900 leading-none">Bangun<span className="text-red-600">Desa</span></span>
-            <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold leading-none mt-1">Bangun Indonesia</p>
+            <span className="text-xl font-bold tracking-tight text-slate-900 leading-none">Bangun Desa <span className="text-red-600">Bangun Indonesia</span></span>
+            <p className="text-[10px] text-slate-500 uppercase tracking-[0.1em] font-bold leading-none mt-1">Desa Terdepan Untuk Indonesia</p>
           </div>
         </div>
         
         <nav className="hidden md:flex items-center gap-8">
-          <a href="#" className="text-sm font-medium text-slate-600 hover:text-red-600 transition-colors">Beranda</a>
-          <a href="#" className="text-sm font-medium text-slate-600 hover:text-red-600 transition-colors">Panduan</a>
-          <a href="#" className="text-sm font-medium text-slate-600 hover:text-red-600 transition-colors">Kontak</a>
+          <button onClick={onHomeClick} className="text-sm font-medium text-slate-600 hover:text-red-600 transition-colors">Beranda</button>
+          <a href="#form-section" onClick={(e) => {
+            if (window.location.pathname !== '/') {
+              onHomeClick();
+            }
+          }} className="text-sm font-medium text-slate-600 hover:text-red-600 transition-colors">Isi Formulir</a>
           
           {user ? (
             <div className="flex items-center gap-4">

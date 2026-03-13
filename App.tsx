@@ -6,8 +6,9 @@ import { RegistrationForm } from './components/RegistrationForm';
 import { Footer } from './components/Footer';
 import { SubmissionSuccess } from './components/SubmissionSuccess';
 import { Dashboard } from './components/Dashboard';
+import { Catalog } from './components/Catalog';
 import { FormState, UserProfile } from './types';
-import { auth, db, collection, onSnapshot, query, orderBy, onAuthStateChanged, User, doc, getDoc, setDoc, where } from './firebase';
+import { auth, db, collection, onSnapshot, query, orderBy, onAuthStateChanged, User, doc, getDoc, setDoc, where, handleFirestoreError, OperationType } from './firebase';
 
 const App: React.FC = () => {
   const [view, setView] = useState<'home' | 'dashboard'>('home');
@@ -30,7 +31,7 @@ const App: React.FC = () => {
         
         if (userDoc.exists()) {
           const existingProfile = userDoc.data() as UserProfile;
-          const shouldBeAdmin = firebaseUser.email === 'faridtaufiqibusiness@gmail.com';
+          const shouldBeAdmin = firebaseUser.email === 'faridtaufiqibusiness@gmail.com' && firebaseUser.emailVerified;
           
           if ((shouldBeAdmin && existingProfile.role !== 'admin') || (!shouldBeAdmin && existingProfile.role === 'admin')) {
             const updatedProfile = {
@@ -44,7 +45,7 @@ const App: React.FC = () => {
           }
         } else {
           // Create new profile
-          const isAdmin = firebaseUser.email === 'faridtaufiqibusiness@gmail.com';
+          const isAdmin = firebaseUser.email === 'faridtaufiqibusiness@gmail.com' && firebaseUser.emailVerified;
           const newProfile: UserProfile = {
             uid: firebaseUser.uid,
             email: firebaseUser.email || '',
@@ -97,6 +98,11 @@ const App: React.FC = () => {
       setSubmissions(sortedData);
     }, (error) => {
       console.error("Firestore Snapshot Error: ", error);
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'submissions');
+      } catch (e) {
+        // Logged
+      }
     });
 
     return () => unsubscribe();
@@ -119,7 +125,12 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header onDashboardClick={() => setView('dashboard')} user={user} userProfile={userProfile} />
+      <Header 
+        onDashboardClick={() => setView('dashboard')} 
+        onHomeClick={() => setView('home')} 
+        user={user} 
+        userProfile={userProfile} 
+      />
       
       <main className="flex-grow">
         {!submitted ? (
