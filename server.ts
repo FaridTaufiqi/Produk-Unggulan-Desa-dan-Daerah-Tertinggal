@@ -55,7 +55,8 @@ async function startServer() {
         'No Telp Direktur', 'No Telp Sekretaris', 'Jumlah Karyawan',
         'NPWP', 'NIB', 'Tahun Berdiri', 'Alamat',
         'Penyertaan Modal', 'Bagi Hasil PADes', 'Media Sosial',
-        'Produk Unggulan', 'Kebutuhan Dukungan'
+        'Produk Unggulan', 'Kebutuhan Dukungan',
+        'Ada Produk Ekspor', 'Produk Unggulan Ekspor'
       ];
 
       // Map data to rows
@@ -68,6 +69,12 @@ async function startServer() {
           .join(' | ');
         
         const needsStr = (item.kebutuhanDukungan || []).join(' | ');
+
+        const exportProductsStr = (item.exportProducts || [])
+          .map((p: any, i: number) => {
+            return `[EKSPOR ${i+1}] Nama: ${p.nama}, Status: ${p.statusEkspor}, Deskripsi: ${p.deskripsi}, Peran BUMDes: ${p.peranBumdes}, Volume: ${p.volumeEkspor}, Tujuan: ${p.negaraTujuan}, Offtaker: ${p.namaOfftaker || '-'}, Peran Offtaker: ${p.peranOfftaker || '-'}`;
+          })
+          .join(' | ');
 
         return [
           item.id,
@@ -94,7 +101,9 @@ async function startServer() {
           (item.bagiHasilPADes || '').replace(/\n/g, ' '),
           item.mediaSosial,
           productsStr,
-          needsStr
+          needsStr,
+          item.hasExportProduct || 'Tidak',
+          exportProductsStr
         ];
       });
 

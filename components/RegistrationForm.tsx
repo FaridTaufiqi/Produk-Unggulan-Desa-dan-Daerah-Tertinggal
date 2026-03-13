@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { FormState, LembagaEkonomiType, VillageProduct, StatusBadanHukum } from '../types';
 import { ProductInputGroup } from './ProductInputGroup';
+import { ExportProductInputGroup } from './ExportProductInputGroup';
 import { db, collection, addDoc, User, signInWithPopup, googleProvider, auth } from '../firebase';
 
 interface RegistrationFormProps {
@@ -131,11 +132,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
     tahunBerdiri: '',
     alamatLembaga: '',
     products: [
-      { ...initialProduct },
-      { ...initialProduct },
       { ...initialProduct }
     ],
-    kebutuhanDukungan: []
+    kebutuhanDukungan: [],
+    hasExportProduct: 'Tidak',
+    exportProducts: []
   });
 
   const handleLogin = async () => {
@@ -185,6 +186,57 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
     const newProducts = [...form.products];
     newProducts[index] = { ...newProducts[index], [field]: value };
     setForm(prev => ({ ...prev, products: newProducts }));
+  };
+
+  const addProduct = () => {
+    if (form.products.length >= 10) {
+      alert("Maksimal 10 produk unggulan");
+      return;
+    }
+    setForm(prev => ({
+      ...prev,
+      products: [...prev.products, { ...initialProduct }]
+    }));
+  };
+
+  const removeProduct = (index: number) => {
+    if (form.products.length <= 1) return;
+    setForm(prev => ({
+      ...prev,
+      products: prev.products.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleExportProductChange = (index: number, field: keyof any, value: any) => {
+    const newExportProducts = [...form.exportProducts];
+    newExportProducts[index] = { ...newExportProducts[index], [field]: value };
+    setForm(prev => ({ ...prev, exportProducts: newExportProducts }));
+  };
+
+  const addExportProduct = () => {
+    setForm(prev => ({
+      ...prev,
+      exportProducts: [
+        ...prev.exportProducts,
+        {
+          nama: '',
+          statusEkspor: 'Belum',
+          deskripsi: '',
+          peranBumdes: '',
+          volumeEkspor: '',
+          negaraTujuan: '',
+          namaOfftaker: '',
+          peranOfftaker: ''
+        }
+      ]
+    }));
+  };
+
+  const removeExportProduct = (index: number) => {
+    setForm(prev => ({
+      ...prev,
+      exportProducts: prev.exportProducts.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -534,16 +586,37 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
           <div className="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center font-bold">4</div>
           <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Identifikasi Produk Unggulan</h3>
         </div>
-        <p className="text-sm text-slate-500 italic">Daftarkan maksimal 3 produk unggulan desa Anda yang paling potensial.</p>
+        <p className="text-sm text-slate-500 italic">Daftarkan produk unggulan desa Anda yang paling potensial.</p>
         <div className="space-y-8">
           {form.products.map((product, index) => (
-            <ProductInputGroup 
-              key={index}
-              index={index}
-              product={product}
-              onChange={handleProductChange}
-            />
+            <div key={index} className="relative">
+              <ProductInputGroup 
+                index={index}
+                product={product}
+                onChange={handleProductChange}
+              />
+              {form.products.length > 1 && (
+                <button 
+                  type="button"
+                  onClick={() => removeProduct(index)}
+                  className="absolute top-2 right-24 text-red-600 text-xs font-bold hover:underline bg-white px-2 py-1 rounded shadow-sm border border-slate-100"
+                >
+                  Hapus
+                </button>
+              )}
+            </div>
           ))}
+          
+          <button 
+            type="button"
+            onClick={addProduct}
+            className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 font-bold hover:bg-slate-50 hover:border-red-200 hover:text-red-600 transition-all flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Tambah Produk Unggulan Lainnya
+          </button>
         </div>
       </div>
 
@@ -566,6 +639,73 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
             </label>
           ))}
         </div>
+      </div>
+
+      {/* Section 6: Ekspor */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+          <div className="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center font-bold">6</div>
+          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Potensi Ekspor Desa</h3>
+        </div>
+        
+        <div className="space-y-4">
+          <label className="text-sm font-semibold text-slate-700 block">Apakah ada produk unggulan desa yang sudah di ekspor atau berpotensi untuk di ekspor?</label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="radio" 
+                name="hasExportProduct" 
+                value="Iya" 
+                checked={form.hasExportProduct === 'Iya'}
+                onChange={(e) => {
+                  handleChange(e);
+                  if (e.target.value === 'Iya' && form.exportProducts.length === 0) {
+                    addExportProduct();
+                  }
+                }}
+                className="w-4 h-4 text-red-600"
+              />
+              <span className="text-sm font-medium text-slate-700">Iya</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="radio" 
+                name="hasExportProduct" 
+                value="Tidak" 
+                checked={form.hasExportProduct === 'Tidak'}
+                onChange={handleChange}
+                className="w-4 h-4 text-red-600"
+              />
+              <span className="text-sm font-medium text-slate-700">Tidak</span>
+            </label>
+          </div>
+        </div>
+
+        {form.hasExportProduct === 'Iya' && (
+          <div className="space-y-8 mt-6">
+            {form.exportProducts.map((exportProduct, index) => (
+              <ExportProductInputGroup 
+                key={index}
+                index={index}
+                product={exportProduct}
+                onChange={handleExportProductChange}
+                onRemove={removeExportProduct}
+                showRemove={form.exportProducts.length > 1}
+              />
+            ))}
+            
+            <button 
+              type="button"
+              onClick={addExportProduct}
+              className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 font-bold hover:bg-slate-50 hover:border-red-200 hover:text-red-600 transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Tambah Produk Ekspor Lainnya
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="pt-8 border-t border-slate-100">

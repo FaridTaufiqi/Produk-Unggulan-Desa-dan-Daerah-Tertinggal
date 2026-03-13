@@ -42,6 +42,18 @@ export enum StatusBadanHukum {
   BELUM_MENDAFTAR = 'Belum Mendaftar Badan Hukum'
 }
 
+export interface ExportProduct {
+  nama: string;
+  statusEkspor: 'Sudah' | 'Belum';
+  deskripsi: string;
+  fotoUrl?: string;
+  peranBumdes: string;
+  volumeEkspor: string;
+  negaraTujuan: string;
+  namaOfftaker?: string;
+  peranOfftaker?: string;
+}
+
 export interface FormState {
   // Identitas Responden
   namaResponden: string;
@@ -78,6 +90,10 @@ export interface FormState {
   // Produk & Kebutuhan
   products: VillageProduct[];
   kebutuhanDukungan: string[];
+
+  // Ekspor
+  hasExportProduct: 'Iya' | 'Tidak';
+  exportProducts: ExportProduct[];
 }
 
 export interface AnalysisResult {

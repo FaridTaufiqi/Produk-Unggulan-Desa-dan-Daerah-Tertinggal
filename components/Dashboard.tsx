@@ -88,7 +88,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
       'No Telp Direktur', 'No Telp Sekretaris', 'Jumlah Karyawan',
       'NPWP', 'NIB', 'Tahun Berdiri', 'Alamat',
       'Penyertaan Modal', 'Bagi Hasil PADes', 'Media Sosial',
-      'Produk Unggulan', 'Kebutuhan Dukungan'
+      'Produk Unggulan', 'Kebutuhan Dukungan',
+      'Ada Produk Ekspor', 'Produk Unggulan Ekspor'
     ];
 
     // Map data to rows
@@ -101,6 +102,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
         .join(' | ');
       
       const needsStr = (item.kebutuhanDukungan || []).join(' | ');
+
+      const exportProductsStr = (item.exportProducts || [])
+        .map((p, i) => {
+          return `[EKSPOR ${i+1}] Nama: ${p.nama}, Status: ${p.statusEkspor}, Deskripsi: ${p.deskripsi}, Peran BUMDes: ${p.peranBumdes}, Volume: ${p.volumeEkspor}, Tujuan: ${p.negaraTujuan}, Offtaker: ${p.namaOfftaker || '-'}, Peran Offtaker: ${p.peranOfftaker || '-'}`;
+        })
+        .join(' | ');
 
       return [
         item.id,
@@ -127,7 +134,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
         item.bagiHasilPADes.replace(/\n/g, ' '),
         item.mediaSosial,
         productsStr,
-        needsStr
+        needsStr,
+        item.hasExportProduct || 'Tidak',
+        exportProductsStr
       ];
     });
 
@@ -222,6 +231,89 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
   const totalSubmissions = data.length;
   const totalProducts = data.reduce((acc, curr) => acc + curr.products.filter(p => p.name).length, 0);
   
+  const isAdmin = userProfile?.role === 'admin' || user?.email === 'faridtaufiqibusiness@gmail.com';
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <button 
+                onClick={onBack}
+                className="flex items-center gap-2 text-slate-500 hover:text-red-600 transition-colors mb-2"
+              >
+                <ArrowLeft size={18} />
+                Kembali ke Beranda
+              </button>
+              <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+                <LayoutDashboard className="text-red-600" />
+                Status Pendaftaran Desa
+              </h1>
+              <div className="flex items-center gap-2 mt-1">
+                <img src={user.photoURL || ''} alt={user.displayName || ''} className="w-5 h-5 rounded-full" />
+                <p className="text-slate-500 text-sm">
+                  Akun Desa: <span className="font-bold text-slate-700">{user.displayName}</span>
+                </p>
+                <button onClick={handleLogout} className="text-xs text-red-600 hover:underline flex items-center gap-1 ml-2">
+                  <LogOut size={12} />
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Simple Status View for Desa */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Check size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Pendaftaran Anda Telah Diterima</h3>
+              <p className="text-slate-500 mb-6">
+                Terima kasih telah melakukan pendaftaran. Data Anda sedang dalam proses verifikasi oleh petugas pusat.
+                Anda memiliki <span className="font-bold text-slate-900">{data.length}</span> pendaftaran aktif.
+              </p>
+              
+              {data.length > 0 && (
+                <div className="text-left border-t border-slate-100 pt-6">
+                  <h4 className="font-bold text-slate-800 mb-4">Riwayat Pendaftaran:</h4>
+                  <div className="space-y-3">
+                    {data.map((item) => (
+                      <div key={item.docId} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-bold text-slate-900">{item.namaLembaga}</p>
+                          <p className="text-xs text-slate-500">{new Date(item.timestamp).toLocaleString('id-ID')}</p>
+                        </div>
+                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase">
+                          Terverifikasi
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 flex items-start gap-4">
+            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0">
+              <AlertCircle size={20} />
+            </div>
+            <div>
+              <h4 className="font-bold text-blue-900 mb-1">Informasi Akses</h4>
+              <p className="text-sm text-blue-700">
+                Statistik global dan backlog pendaftaran seluruh desa hanya dapat diakses oleh Petugas Pusat (Admin). 
+                Hubungi admin jika Anda memerlukan bantuan lebih lanjut.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Institution distribution
   const institutionData = Object.values(LembagaEkonomiType).map(type => ({
     name: type,
@@ -257,7 +349,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
             <div className="flex items-center gap-2 mt-1">
               <img src={user.photoURL || ''} alt={user.displayName || ''} className="w-5 h-5 rounded-full" />
               <p className="text-slate-500 text-sm">
-                Petugas {userProfile?.role === 'admin' ? 'Pusat' : 'Desa'}: <span className="font-bold text-slate-700">{user.displayName}</span>
+                Petugas Pusat: <span className="font-bold text-slate-700">{user.displayName}</span>
               </p>
               <button onClick={handleLogout} className="text-xs text-red-600 hover:underline flex items-center gap-1 ml-2">
                 <LogOut size={12} />
@@ -473,6 +565,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
                             {p.name}
                           </span>
                         ))}
+                        {item.hasExportProduct === 'Iya' && (
+                          <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200 font-bold flex items-center gap-1">
+                            <span className="w-1 h-1 rounded-full bg-amber-500"></span>
+                            EKSPOR
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">

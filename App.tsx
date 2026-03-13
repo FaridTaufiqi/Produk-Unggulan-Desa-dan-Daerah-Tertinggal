@@ -29,7 +29,19 @@ const App: React.FC = () => {
         const userDoc = await getDoc(userDocRef);
         
         if (userDoc.exists()) {
-          setUserProfile(userDoc.data() as UserProfile);
+          const existingProfile = userDoc.data() as UserProfile;
+          const shouldBeAdmin = firebaseUser.email === 'faridtaufiqibusiness@gmail.com';
+          
+          if ((shouldBeAdmin && existingProfile.role !== 'admin') || (!shouldBeAdmin && existingProfile.role === 'admin')) {
+            const updatedProfile = {
+              ...existingProfile,
+              role: shouldBeAdmin ? 'admin' : 'desa'
+            };
+            await setDoc(userDocRef, updatedProfile, { merge: true });
+            setUserProfile(updatedProfile);
+          } else {
+            setUserProfile(existingProfile);
+          }
         } else {
           // Create new profile
           const isAdmin = firebaseUser.email === 'faridtaufiqibusiness@gmail.com';
