@@ -9,7 +9,6 @@ import {
   Database, 
   TrendingUp, 
   MapPin, 
-  Building2, 
   Package,
   ArrowLeft,
   Lock,
@@ -314,20 +313,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
     );
   }
 
-  // Institution distribution
-  const institutionData = Object.values(LembagaEkonomiType).map(type => ({
-    name: type,
-    value: data.filter(item => item.lembagaEkonomi === type).length
-  })).filter(item => item.value > 0);
+  // Product Category distribution
+  const categoryCounts: Record<string, number> = {};
+  data.forEach(item => {
+    item.products.forEach(product => {
+      if (product.category) {
+        categoryCounts[product.category] = (categoryCounts[product.category] || 0) + 1;
+      }
+    });
+  });
+  const categoryData = Object.entries(categoryCounts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
 
-  // Province distribution
+  // Province distribution (all)
   const provinceCounts: Record<string, number> = {};
   data.forEach(item => {
     provinceCounts[item.provinsi] = (provinceCounts[item.provinsi] || 0) + 1;
   });
-  const provinceData = Object.entries(provinceCounts).map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
+  const provinceData = Object.entries(provinceCounts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
@@ -398,17 +404,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Institution Chart */}
+          {/* Product Category Chart */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
             <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <Building2 size={20} className="text-red-600" />
-              Distribusi Lembaga Ekonomi
+              <Package size={20} className="text-red-600" />
+              Rekap Kategori Produk
             </h3>
-            <div className="h-[300px] w-full">
+            <div className="h-[350px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={institutionData}
+                    data={categoryData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -416,7 +422,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {institutionData.map((entry, index) => (
+                    {categoryData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -433,28 +439,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
             <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
               <MapPin size={20} className="text-red-600" />
-              Top 5 Provinsi Teraktif
+              Rekap Provinsi Terdaftar
             </h3>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={provinceData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                  <XAxis type="number" hide />
-                  <YAxis 
-                    dataKey="name" 
-                    type="category" 
-                    width={120} 
-                    axisLine={false}
-                    tickLine={false}
-                    style={{ fontSize: '12px', fontWeight: 500 }}
-                  />
-                  <Tooltip 
-                    cursor={{ fill: '#f8fafc' }}
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Bar dataKey="value" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={30} />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className={`w-full overflow-y-auto pr-2`} style={{ height: '350px' }}>
+              <div style={{ height: Math.max(350, provinceData.length * 40) }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={provinceData} layout="vertical" margin={{ left: 20, right: 30 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <XAxis type="number" hide />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      width={150} 
+                      axisLine={false}
+                      tickLine={false}
+                      style={{ fontSize: '11px', fontWeight: 500 }}
+                    />
+                    <Tooltip 
+                      cursor={{ fill: '#f8fafc' }}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Bar dataKey="value" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20}>
+                      {provinceData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>
