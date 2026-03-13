@@ -46,14 +46,14 @@ export const Hero: React.FC = () => {
           <div className="mt-12 lg:mt-0 relative">
             <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl">
               <img 
-                src="https://picsum.photos/800/600?nature,village" 
+                src="https://images.unsplash.com/photo-1596434300655-e48d3ff3dd5e?q=80&w=2000&auto=format&fit=crop" 
                 alt="Indonesian Village Potential" 
                 className="w-full h-auto object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-8">
                 <div className="text-white">
-                  <p className="text-sm font-medium opacity-80">Produk Unggulan Bulan Ini</p>
-                  <p className="text-2xl font-bold">Kopi Robusta Pegunungan Dieng</p>
+                  <p className="text-sm font-medium opacity-80">Produk Unggulan Desa</p>
+                  <p className="text-2xl font-bold">Potensi Ekonomi Lokal Indonesia</p>
                 </div>
               </div>
             </div>

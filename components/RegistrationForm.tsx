@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { Navigation, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { FormState, LembagaEkonomiType, VillageProduct, StatusBadanHukum } from '../types';
 import { ProductInputGroup } from './ProductInputGroup';
 import { ExportProductInputGroup } from './ExportProductInputGroup';
@@ -103,6 +104,7 @@ const initialProduct: VillageProduct = {
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, user }) => {
   const [loading, setLoading] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({
@@ -157,6 +159,33 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
     } finally {
       setLoginLoading(false);
     }
+  };
+
+  const handleTagLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Browser Anda tidak mendukung fitur lokasi.");
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setForm(prev => ({
+          ...prev,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        }));
+        setIsLocating(false);
+      },
+      (error) => {
+        console.error("Geolocation Error:", error);
+        let msg = "Gagal mengambil lokasi.";
+        if (error.code === 1) msg = "Izin lokasi ditolak. Silakan aktifkan GPS/Izin lokasi di browser.";
+        alert(msg);
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -589,6 +618,39 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
               required
             />
           </div>
+          <div className="md:col-span-2 space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Tagging Lokasi Lembaga Ekonomi (GPS)</label>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <button
+                type="button"
+                onClick={handleTagLocation}
+                disabled={isLocating}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all shadow-sm ${
+                  form.latitude 
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {isLocating ? (
+                  <Loader2 size={18} className="animate-spin text-red-600" />
+                ) : (
+                  <Navigation size={18} className={form.latitude ? 'text-emerald-600' : 'text-red-600'} />
+                )}
+                {form.latitude ? 'Lokasi Berhasil Ditandai' : 'Tag Lokasi Lembaga'}
+              </button>
+              
+              {form.latitude && (
+                <div className="flex gap-4 text-[11px] font-mono text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                  <span>Lat: {form.latitude.toFixed(6)}</span>
+                  <span>Long: {form.longitude?.toFixed(6)}</span>
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] text-slate-500 italic">
+              *Klik tombol di atas saat Anda berada di lokasi kantor lembaga atau pusat produksi untuk akurasi data spasial.
+            </p>
+          </div>
+
           <div className="md:col-span-2 space-y-2">
             <label className="text-sm font-semibold text-slate-700">Alamat Lengkap Lembaga</label>
             <textarea 

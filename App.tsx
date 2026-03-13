@@ -6,7 +6,6 @@ import { RegistrationForm } from './components/RegistrationForm';
 import { Footer } from './components/Footer';
 import { SubmissionSuccess } from './components/SubmissionSuccess';
 import { Dashboard } from './components/Dashboard';
-import { Catalog } from './components/Catalog';
 import { FormState, UserProfile } from './types';
 import { auth, db, collection, onSnapshot, query, orderBy, onAuthStateChanged, User, doc, getDoc, setDoc, where, handleFirestoreError, OperationType } from './firebase';
 

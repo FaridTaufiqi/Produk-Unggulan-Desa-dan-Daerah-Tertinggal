@@ -18,7 +18,10 @@ import {
   Download,
   FileSpreadsheet,
   Copy,
-  Check
+  Check,
+  Eye,
+  X,
+  Image as ImageIcon
 } from 'lucide-react';
 import { FormState, LembagaEkonomiType, UserProfile } from '../types';
 import { User, auth, signInWithPopup, googleProvider, db, doc, deleteDoc } from '../firebase';
@@ -39,6 +42,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
   const [showSpreadsheetLink, setShowSpreadsheetLink] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
   const [appUrl, setAppUrl] = React.useState(window.location.origin);
+  const [selectedSubmission, setSelectedSubmission] = React.useState<(FormState & { id: string; timestamp: number; docId: string; uid: string }) | null>(null);
 
   React.useEffect(() => {
     fetch('/api/config')
@@ -99,7 +103,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
       'Provinsi', 'Kabupaten', 'Kecamatan', 'Desa',
       'Nama Lembaga', 'Bentuk Lembaga', 'Status Badan Hukum',
       'No Telp Direktur', 'No Telp Sekretaris', 'Jumlah Karyawan',
-      'NPWP', 'NIB', 'Tahun Berdiri', 'Alamat',
+      'NPWP', 'NIB', 'Tahun Berdiri', 'Alamat', 'Latitude', 'Longitude',
       'Penyertaan Modal', 'Bagi Hasil PADes', 'Media Sosial',
       'Produk Unggulan', 'Kebutuhan Dukungan',
       'Ada Produk Ekspor', 'Produk Unggulan Ekspor'
@@ -143,6 +147,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
         item.nibLembaga,
         item.tahunBerdiri,
         item.alamatLembaga.replace(/\n/g, ' '),
+        item.latitude || '-',
+        item.longitude || '-',
         item.penyertaanModal.replace(/\n/g, ' '),
         item.bagiHasilPADes.replace(/\n/g, ' '),
         item.mediaSosial,
@@ -299,9 +305,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
                           <p className="text-sm font-bold text-slate-900">{item.namaLembaga}</p>
                           <p className="text-xs text-slate-500">{new Date(item.timestamp).toLocaleString('id-ID')}</p>
                         </div>
-                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase">
-                          Terverifikasi
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase">
+                            Terverifikasi
+                          </span>
+                          <button 
+                            onClick={() => setSelectedSubmission(item)}
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            title="Lihat Detail"
+                          >
+                            <Eye size={18} />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -619,18 +634,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleDelete(item.docId)}
-                        disabled={deletingId === item.docId}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
-                        title="Hapus Pendaftaran"
-                      >
-                        {deletingId === item.docId ? (
-                          <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Trash2 size={18} />
-                        )}
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => setSelectedSubmission(item)}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          title="Lihat Detail"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(item.docId)}
+                          disabled={deletingId === item.docId}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
+                          title="Hapus Pendaftaran"
+                        >
+                          {deletingId === item.docId ? (
+                            <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 size={18} />
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -646,6 +670,240 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
           </div>
         </div>
       </div>
+
+      {/* Detail Modal */}
+      {selectedSubmission && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Detail Pendaftaran: {selectedSubmission.id}</h3>
+                <p className="text-xs text-slate-500">{new Date(selectedSubmission.timestamp).toLocaleString('id-ID')}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedSubmission(null)}
+                className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+              >
+                <X size={20} className="text-slate-500" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+              {/* Section: Identitas Responden */}
+              <section>
+                <h4 className="text-sm font-bold text-red-600 uppercase tracking-wider mb-4 border-b border-red-100 pb-1">Identitas Responden</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Nama Lengkap</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.namaResponden}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">NIK</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.nikResponden}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">No. HP / WhatsApp</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.noHpResponden}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Jabatan</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.jabatanResponden}</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* Section: Wilayah */}
+              <section>
+                <h4 className="text-sm font-bold text-red-600 uppercase tracking-wider mb-4 border-b border-red-100 pb-1">Wilayah Administrasi</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Provinsi</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.provinsi}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Kabupaten</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.kabupaten}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Kecamatan</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.kecamatan}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Desa</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.desa}</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* Section: Lembaga Ekonomi */}
+              <section>
+                <h4 className="text-sm font-bold text-red-600 uppercase tracking-wider mb-4 border-b border-red-100 pb-1">Profil Lembaga Ekonomi</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="md:col-span-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Nama Lembaga</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.namaLembaga}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Bentuk Lembaga</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.lembagaEkonomi}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Status Badan Hukum</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.statusBadanHukum}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Tahun Berdiri</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.tahunBerdiri}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">NPWP Lembaga</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.npwpLembaga}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">NIB Lembaga</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.nibLembaga}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Jumlah Karyawan</p>
+                    <p className="text-sm font-medium text-slate-900">{selectedSubmission.jumlahKaryawan} Orang</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Lokasi Lembaga Ekonomi (GPS)</p>
+                    <p className="text-sm font-medium text-slate-900">
+                      {selectedSubmission.latitude ? (
+                        <a 
+                          href={`https://www.google.com/maps?q=${selectedSubmission.latitude},${selectedSubmission.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          <MapPin size={14} />
+                          {selectedSubmission.latitude.toFixed(6)}, {selectedSubmission.longitude?.toFixed(6)}
+                        </a>
+                      ) : (
+                        <span className="text-slate-400 italic">Tidak ditandai</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="md:col-span-3">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Alamat Lengkap</p>
+                    <p className="text-sm font-medium text-slate-900 whitespace-pre-wrap">{selectedSubmission.alamatLembaga}</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* Section: Produk Unggulan */}
+              <section>
+                <h4 className="text-sm font-bold text-red-600 uppercase tracking-wider mb-4 border-b border-red-100 pb-1">Produk Unggulan Desa</h4>
+                <div className="space-y-6">
+                  {selectedSubmission.products.filter(p => p.name).map((product, idx) => (
+                    <div key={idx} className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                      <div className="flex flex-col md:flex-row gap-6">
+                        {/* Product Photo */}
+                        <div className="w-full md:w-48 h-48 shrink-0 rounded-lg overflow-hidden border border-slate-200 bg-white">
+                          {product.fotoUrl ? (
+                            <img 
+                              src={product.fotoUrl} 
+                              alt={product.name} 
+                              className="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform"
+                              onClick={() => window.open(product.fotoUrl, '_blank')}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 gap-2">
+                              <ImageIcon size={48} />
+                              <span className="text-[10px] font-bold uppercase">Tidak Ada Foto</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Product Info */}
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="md:col-span-2">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Nama Produk</p>
+                            <p className="text-base font-bold text-slate-900">{product.name}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Kategori</p>
+                            <p className="text-sm font-medium text-slate-900">{product.category}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Penjualan 2025</p>
+                            <p className="text-sm font-bold text-emerald-600">Rp {product.totalPenjualan2025}</p>
+                          </div>
+                          <div className="md:col-span-2">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Deskripsi</p>
+                            <p className="text-sm text-slate-600 italic">{product.deskripsi}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Kapasitas Produksi</p>
+                            <p className="text-sm font-medium text-slate-900">{product.kapasitasBulanan} / bln | {product.kapasitasTahunan} / thn</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Pangsa Pasar</p>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {(product.pangsaPasar || []).map(p => (
+                                <span key={p} className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full">{p}</span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Section: Ekspor */}
+              {selectedSubmission.hasExportProduct === 'Iya' && (
+                <section>
+                  <h4 className="text-sm font-bold text-amber-600 uppercase tracking-wider mb-4 border-b border-amber-100 pb-1 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                    Potensi Ekspor
+                  </h4>
+                  <div className="space-y-4">
+                    {(selectedSubmission.exportProducts || []).map((exp, idx) => (
+                      <div key={idx} className="bg-amber-50/50 rounded-xl p-4 border border-amber-100 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="md:col-span-2">
+                          <p className="text-[10px] font-bold text-amber-500 uppercase tracking-tight">Nama Produk Ekspor</p>
+                          <p className="text-sm font-bold text-slate-900">{exp.nama}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-amber-500 uppercase tracking-tight">Status Ekspor</p>
+                          <p className="text-sm font-medium text-slate-900">{exp.statusEkspor}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-amber-500 uppercase tracking-tight">Negara Tujuan</p>
+                          <p className="text-sm font-medium text-slate-900">{exp.negaraTujuan}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-amber-500 uppercase tracking-tight">Volume Ekspor</p>
+                          <p className="text-sm font-medium text-slate-900">{exp.volumeEkspor}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-amber-500 uppercase tracking-tight">Nama Offtaker</p>
+                          <p className="text-sm font-medium text-slate-900">{exp.namaOfftaker || '-'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <button 
+                onClick={() => setSelectedSubmission(null)}
+                className="px-6 py-2 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300 transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -78,6 +78,8 @@ service cloud.firestore {
              data.bagiHasilPADes is string &&
              data.tahunBerdiri is string &&
              data.alamatLembaga is string && data.alamatLembaga.size() < 1000 &&
+             (!('latitude' in data) || data.latitude is number) &&
+             (!('longitude' in data) || data.longitude is number) &&
              (!('products' in data) || data.products is list) &&
              (!('kebutuhanDukungan' in data) || data.kebutuhanDukungan is list) &&
              (!('mediaSosial' in data) || data.mediaSosial is string);

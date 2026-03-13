@@ -86,6 +86,8 @@ export interface FormState {
   mediaSosial: string;
   tahunBerdiri: string;
   alamatLembaga: string;
+  latitude?: number;
+  longitude?: number;
 
   // Produk & Kebutuhan
   products: VillageProduct[];

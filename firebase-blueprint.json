@@ -46,6 +46,8 @@
         "mediaSosial": { "type": "string" },
         "tahunBerdiri": { "type": "string" },
         "alamatLembaga": { "type": "string" },
+        "latitude": { "type": "number", "description": "Koordinat Lintang" },
+        "longitude": { "type": "number", "description": "Koordinat Bujur" },
         "products": {
           "type": "array",
           "items": {
