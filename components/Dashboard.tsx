@@ -38,8 +38,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [showSpreadsheetLink, setShowSpreadsheetLink] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
+  const [appUrl, setAppUrl] = React.useState(window.location.origin);
 
-  const exportUrl = `${window.location.origin}/api/export/csv`;
+  React.useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(config => {
+        if (config.appUrl) {
+          // Ensure no trailing slash for consistency
+          setAppUrl(config.appUrl.replace(/\/$/, ''));
+        }
+      })
+      .catch(err => console.error('Failed to fetch config:', err));
+  }, []);
+
+  const exportUrl = `${appUrl}/api/export/csv`;
   const importFormula = `=IMPORTDATA("${exportUrl}")`;
 
   const handleCopyLink = () => {

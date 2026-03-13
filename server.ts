@@ -31,17 +31,33 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Request logging
+  app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+  });
+
   // API Routes
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
   });
 
+  app.get('/api/config', (req, res) => {
+    res.json({
+      appUrl: process.env.APP_URL || ''
+    });
+  });
+
   // CSV Export Route for Spreadsheet (IMPORTDATA)
-  app.get('/api/export/csv', async (req, res) => {
+  app.get(['/api/export/csv', '/api/export/csv/'], async (req, res) => {
+    console.log('CSV Export requested');
+    res.setHeader('Access-Control-Allow-Origin', '*');
     try {
       const firestore = getFirestore();
+      console.log('Fetching submissions from Firestore...');
       const snapshot = await firestore.collection('submissions').orderBy('timestamp', 'desc').get();
       const data = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
+      console.log(`Found ${data.length} submissions`);
 
       if (data.length === 0) {
         return res.send('No data available');
@@ -137,7 +153,8 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    // Express 5 requires *all for catch-all routes
+    app.get('*all', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
