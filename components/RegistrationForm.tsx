@@ -4,39 +4,12 @@ import { Navigation, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { FormState, LembagaEkonomiType, VillageProduct, StatusBadanHukum } from '../types';
 import { ProductInputGroup } from './ProductInputGroup';
 import { ExportProductInputGroup } from './ExportProductInputGroup';
-import { db, collection, addDoc, User, signInWithPopup, googleProvider, auth } from '../firebase';
+import { db, collection, addDoc, User, signInWithPopup, googleProvider, auth, handleFirestoreError, OperationType } from '../firebase';
 
 interface RegistrationFormProps {
   onSuccess: (id: string) => void;
   user: User | null;
 }
-
-enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: any;
-}
-
-const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: null, // Simplified for this component
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-};
 
 const provinces = [
   { id: "11", name: "Aceh (NAD)" },
@@ -312,21 +285,29 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
         timestamp: Date.now(),
       };
 
-      await addDoc(collection(db, 'submissions'), submissionData);
+      try {
+        await addDoc(collection(db, 'submissions'), submissionData);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.CREATE, 'submissions');
+      }
       
       // Add each product to the public catalog
-      const catalogPromises = form.products.filter(p => p.name).map(product => {
-        return addDoc(collection(db, 'catalog'), {
-          ...product,
-          uid: user.uid,
-          submissionId: id,
-          timestamp: Date.now(),
-          provinsi: form.provinsi,
-          kabupaten: form.kabupaten,
-          kecamatan: form.kecamatan,
-          desa: form.desa,
-          namaLembaga: form.namaLembaga
-        });
+      const catalogPromises = form.products.filter(p => p.name).map(async (product) => {
+        try {
+          await addDoc(collection(db, 'catalog'), {
+            ...product,
+            uid: user.uid,
+            submissionId: id,
+            timestamp: Date.now(),
+            provinsi: form.provinsi,
+            kabupaten: form.kabupaten,
+            kecamatan: form.kecamatan,
+            desa: form.desa,
+            namaLembaga: form.namaLembaga
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, 'catalog');
+        }
       });
       await Promise.all(catalogPromises);
 
@@ -342,7 +323,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
     } catch (err: any) {
       setLoading(false);
       const errorMessage = err.message || String(err);
-      if (errorMessage.includes('permission-denied') || errorMessage.includes('insufficient permissions')) {
+      if (errorMessage.includes('permission-denied') || errorMessage.includes('insufficient permissions') || errorMessage.includes('OperationType')) {
         setError("Gagal mengirim: Pastikan semua data wajib diisi dengan benar (NIK harus 16 digit).");
       } else {
         setError("Terjadi kesalahan saat mengirim formulir. Silakan coba lagi.");

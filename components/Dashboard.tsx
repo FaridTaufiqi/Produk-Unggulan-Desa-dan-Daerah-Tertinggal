@@ -24,7 +24,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { FormState, LembagaEkonomiType, UserProfile } from '../types';
-import { User, auth, signInWithPopup, googleProvider, db, doc, deleteDoc } from '../firebase';
+import { User, auth, signInWithPopup, googleProvider, db, doc, deleteDoc, handleFirestoreError, OperationType } from '../firebase';
 import { IndonesiaMap } from './IndonesiaMap';
 
 interface DashboardProps {
@@ -44,6 +44,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
   const [copied, setCopied] = React.useState(false);
   const [appUrl, setAppUrl] = React.useState(window.location.origin);
   const [selectedSubmission, setSelectedSubmission] = React.useState<(FormState & { id: string; timestamp: number; docId: string; uid: string }) | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     fetch('/api/config')
@@ -188,16 +189,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
   };
 
   const handleDelete = async (docId: string) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus data pendaftaran ini? Tindakan ini tidak dapat dibatalkan.')) {
-      return;
-    }
-
     setDeletingId(docId);
     try {
       await deleteDoc(doc(db, 'submissions', docId));
+      setConfirmDeleteId(null);
     } catch (error) {
       console.error("Delete Error: ", error);
-      alert("Gagal menghapus data. Pastikan Anda memiliki izin yang cukup.");
+      try {
+        handleFirestoreError(error, OperationType.DELETE, `submissions/${docId}`);
+      } catch (e) {
+        alert("Gagal menghapus data. Pastikan Anda memiliki izin yang cukup.");
+      }
     } finally {
       setDeletingId(null);
     }
@@ -649,7 +651,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
                           <Eye size={18} />
                         </button>
                         <button 
-                          onClick={() => handleDelete(item.docId)}
+                          onClick={() => setConfirmDeleteId(item.docId)}
                           disabled={deletingId === item.docId}
                           className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
                           title="Hapus Pendaftaran"
@@ -676,6 +678,43 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 border border-slate-200 animate-in fade-in zoom-in duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 text-center mb-2">Hapus Data Pendaftaran?</h3>
+            <p className="text-slate-500 text-center mb-8">
+              Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan dan data akan hilang permanen dari sistem.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setConfirmDeleteId(null)}
+                className="flex-1 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={() => handleDelete(confirmDeleteId)}
+                disabled={deletingId === confirmDeleteId}
+                className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-200 flex items-center justify-center gap-2"
+              >
+                {deletingId === confirmDeleteId ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Menghapus...
+                  </>
+                ) : (
+                  'Ya, Hapus Data'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Detail Modal */}
       {selectedSubmission && (

@@ -13,6 +13,7 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
   const [geoData, setGeoData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const MAP_SOURCES = [
@@ -43,19 +44,32 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
       {
         url: 'https://raw.githubusercontent.com/superpikar/indonesia-topojson/master/indonesia.json',
         type: 'topojson'
+      },
+      {
+        url: 'https://raw.githubusercontent.com/superpikar/indonesia-topojson/master/indonesia-provinces-simple.json',
+        type: 'topojson'
+      },
+      {
+        url: 'https://unpkg.com/indonesia-geojson@1.0.1/indonesia-provinces.json',
+        type: 'geojson'
       }
     ];
 
     const tryFetch = async (index: number) => {
       if (index >= MAP_SOURCES.length) {
         setLoading(false);
-        setError("Gagal memuat data peta dari semua sumber. Silakan periksa koneksi internet Anda.");
+        setError("Gagal memuat peta dasar dari semua sumber cadangan. Menampilkan mode koordinat.");
         return;
       }
 
       const source = MAP_SOURCES[index];
       try {
-        const response = await fetch(source.url);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+        const response = await fetch(source.url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.json();
@@ -80,14 +94,17 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
         setError(null);
       } catch (err) {
         console.warn(`Source ${index} failed:`, err);
+        // Small delay before next source
+        await new Promise(resolve => setTimeout(resolve, 500));
         tryFetch(index + 1);
       }
     };
 
     setLoading(true);
     setError(null);
+    setGeoData(null);
     tryFetch(0);
-  }, []);
+  }, [retryCount]);
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -227,7 +244,9 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
         {loading ? (
           <div className="flex flex-col items-center gap-2">
             <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-xs text-slate-400 font-medium">Memuat Peta Indonesia...</p>
+            <p className="text-xs text-slate-400 font-medium">
+              {retryCount > 0 ? `Mencoba Memuat Ulang (${retryCount})...` : 'Memuat Peta Indonesia...'}
+            </p>
           </div>
         ) : (
           <svg 
@@ -246,7 +265,7 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
             </p>
           </div>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={() => setRetryCount(prev => prev + 1)}
             className="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold rounded-lg transition-all shadow-sm"
           >
             Coba Lagi

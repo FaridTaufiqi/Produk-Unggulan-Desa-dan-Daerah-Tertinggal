@@ -52,10 +52,14 @@ service cloud.firestore {
         'lembagaEkonomi', 'alamatLembaga', 'namaResponden', 'nikResponden', 
         'noHpResponden', 'jabatanResponden', 'namaLembaga', 'tahunBerdiri',
         'statusBadanHukum', 'noTelpDirektur', 'noTelpSekretaris', 'jumlahKaryawan',
-        'npwpLembaga', 'penyertaanModal', 'bagiHasilPADes'
+        'npwpLembaga', 'penyertaanModal', 'bagiHasilPADes', 'hasExportProduct',
+        'products', 'kebutuhanDukungan', 'exportProducts'
       ];
       
+      let allowedFields = requiredFields.concat(['latitude', 'longitude', 'googleMapsUrl', 'formattedAddress', 'mediaSosial', 'nibLembaga']);
+      
       return data.keys().hasAll(requiredFields) &&
+             data.keys().hasOnly(allowedFields) &&
              data.uid == request.auth.uid &&
              data.timestamp is number &&
              data.id is string &&
@@ -80,9 +84,28 @@ service cloud.firestore {
              data.alamatLembaga is string && data.alamatLembaga.size() < 1000 &&
              (!('latitude' in data) || data.latitude is number) &&
              (!('longitude' in data) || data.longitude is number) &&
-             (!('products' in data) || data.products is list) &&
-             (!('kebutuhanDukungan' in data) || data.kebutuhanDukungan is list) &&
+             data.products is list &&
+             data.kebutuhanDukungan is list &&
+             data.exportProducts is list &&
              (!('mediaSosial' in data) || data.mediaSosial is string);
+    }
+
+    function isValidCatalog(data) {
+      let requiredFields = [
+        'name', 'category', 'legalitas', 'kapasitasBulanan', 'kapasitasTahunan',
+        'deskripsi', 'mitraUsaha', 'totalPenjualan2025', 'pangsaPasar',
+        'uid', 'submissionId', 'timestamp', 'provinsi', 'kabupaten',
+        'kecamatan', 'desa', 'namaLembaga'
+      ];
+      let allowedFields = requiredFields.concat(['fotoUrl']);
+      
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().hasOnly(allowedFields) &&
+             data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 &&
+             data.category is string &&
+             data.legalitas is list &&
+             data.timestamp is number;
     }
 
     match /users/{userId} {
@@ -110,8 +133,9 @@ service cloud.firestore {
       // Public read access for the catalog
       allow read: if true;
       // Only authenticated users can create/update their own products
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
+      allow create: if isAuthenticated() && isValidCatalog(request.resource.data);
+      allow update: if isAuthenticated() && isValidCatalog(request.resource.data) && (isAdmin() || resource.data.uid == request.auth.uid);
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
     }
 
     match /test/connection {
