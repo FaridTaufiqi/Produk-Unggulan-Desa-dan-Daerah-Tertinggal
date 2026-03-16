@@ -90,7 +90,7 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
   }, []);
 
   useEffect(() => {
-    if (!geoData || !svgRef.current) return;
+    if (!svgRef.current) return;
 
     const updateMap = () => {
       if (!svgRef.current) return;
@@ -237,9 +237,21 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
         )}
       </div>
       {error && !loading && (
-        <p className="mt-2 text-[10px] text-amber-600 font-medium text-center bg-amber-50 py-1 rounded border border-amber-100">
-          ⚠️ {error} (Menampilkan mode koordinat terbatas)
-        </p>
+        <div className="mt-3 p-3 bg-amber-50 rounded-xl border border-amber-100 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">⚠️</span>
+            <p className="text-[10px] text-amber-700 font-medium leading-tight">
+              {error} <br/>
+              <span className="text-amber-600/70">Menampilkan mode koordinat terbatas (titik lokasi tetap akurat).</span>
+            </p>
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold rounded-lg transition-all shadow-sm"
+          >
+            Coba Lagi
+          </button>
+        </div>
       )}
     </div>
   );
