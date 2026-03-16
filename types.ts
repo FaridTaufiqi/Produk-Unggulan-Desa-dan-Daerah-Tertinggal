@@ -88,6 +88,8 @@ export interface FormState {
   alamatLembaga: string;
   latitude?: number;
   longitude?: number;
+  googleMapsUrl?: string;
+  formattedAddress?: string;
 
   // Produk & Kebutuhan
   products: VillageProduct[];

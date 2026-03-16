@@ -170,11 +170,29 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
 
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+        
+        let address = '';
+        try {
+          // Fetch address using Nominatim (Free reverse geocoding)
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+          if (response.ok) {
+            const data = await response.json();
+            address = data.display_name;
+          }
+        } catch (err) {
+          console.error("Reverse Geocoding Error:", err);
+        }
+
         setForm(prev => ({
           ...prev,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
+          latitude: lat,
+          longitude: lng,
+          googleMapsUrl: mapsUrl,
+          formattedAddress: address
         }));
         setIsLocating(false);
       },
@@ -667,9 +685,30 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
               </button>
               
               {form.latitude && (
-                <div className="flex gap-4 text-[11px] font-mono text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-                  <span>Lat: {form.latitude.toFixed(6)}</span>
-                  <span>Long: {form.longitude?.toFixed(6)}</span>
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex gap-4 text-[11px] font-mono text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                    <span>Lat: {form.latitude.toFixed(6)}</span>
+                    <span>Long: {form.longitude?.toFixed(6)}</span>
+                  </div>
+                  {form.formattedAddress && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
+                      <p className="text-[10px] font-bold text-emerald-800 uppercase mb-1">Alamat Terdeteksi (Google Maps):</p>
+                      <p className="text-xs text-emerald-700 leading-relaxed">{form.formattedAddress}</p>
+                      {form.googleMapsUrl && (
+                        <a 
+                          href={form.googleMapsUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-red-600 hover:underline"
+                        >
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                          </svg>
+                          Buka di Google Maps
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -104,7 +104,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
       'Provinsi', 'Kabupaten', 'Kecamatan', 'Desa',
       'Nama Lembaga', 'Bentuk Lembaga', 'Status Badan Hukum',
       'No Telp Direktur', 'No Telp Sekretaris', 'Jumlah Karyawan',
-      'NPWP', 'NIB', 'Tahun Berdiri', 'Alamat', 'Latitude', 'Longitude',
+      'NPWP', 'NIB', 'Tahun Berdiri', 'Alamat', 'Latitude', 'Longitude', 'Alamat Google Maps', 'Link Google Maps',
       'Penyertaan Modal', 'Bagi Hasil PADes', 'Media Sosial',
       'Produk Unggulan', 'Kebutuhan Dukungan',
       'Ada Produk Ekspor', 'Produk Unggulan Ekspor'
@@ -150,6 +150,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
         item.alamatLembaga.replace(/\n/g, ' '),
         item.latitude || '-',
         item.longitude || '-',
+        item.formattedAddress || '-',
+        item.googleMapsUrl || '-',
         item.penyertaanModal.replace(/\n/g, ' '),
         item.bagiHasilPADes.replace(/\n/g, ' '),
         item.mediaSosial,
@@ -775,21 +777,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Lokasi Lembaga Ekonomi (GPS)</p>
-                    <p className="text-sm font-medium text-slate-900">
+                    <div className="space-y-1">
                       {selectedSubmission.latitude ? (
-                        <a 
-                          href={`https://www.google.com/maps?q=${selectedSubmission.latitude},${selectedSubmission.longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline flex items-center gap-1"
-                        >
-                          <MapPin size={14} />
-                          {selectedSubmission.latitude.toFixed(6)}, {selectedSubmission.longitude?.toFixed(6)}
-                        </a>
+                        <>
+                          <a 
+                            href={selectedSubmission.googleMapsUrl || `https://www.google.com/maps?q=${selectedSubmission.latitude},${selectedSubmission.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline flex items-center gap-1 text-sm font-medium"
+                          >
+                            <MapPin size={14} />
+                            {selectedSubmission.latitude.toFixed(6)}, {selectedSubmission.longitude?.toFixed(6)}
+                          </a>
+                          {selectedSubmission.formattedAddress && (
+                            <p className="text-[11px] text-slate-500 leading-tight italic">{selectedSubmission.formattedAddress}</p>
+                          )}
+                        </>
                       ) : (
-                        <span className="text-slate-400 italic">Tidak ditandai</span>
+                        <span className="text-slate-400 italic text-sm">Tidak ditandai</span>
                       )}
-                    </p>
+                    </div>
                   </div>
                   <div className="md:col-span-3">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Alamat Lengkap</p>
