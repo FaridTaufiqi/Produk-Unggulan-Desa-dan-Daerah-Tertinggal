@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { VillageProduct } from '../types';
 import { GoogleGenAI } from '@google/genai';
 import { Camera, Upload, CheckCircle, Loader2, Image as ImageIcon } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
 import { storage, ref, uploadBytes, getDownloadURL } from '../firebase';
 
 interface ProductInputGroupProps {
@@ -42,6 +43,7 @@ const PANGSA_PASAR_OPTIONS = [
 export const ProductInputGroup: React.FC<ProductInputGroupProps> = ({ index, product, onChange }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [slogan, setSlogan] = useState('');
 
   const generateSlogan = async () => {
@@ -66,23 +68,35 @@ export const ProductInputGroup: React.FC<ProductInputGroupProps> = ({ index, pro
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (50MB limit)
-    if (file.size > 50 * 1024 * 1024) {
-      alert("Ukuran file terlalu besar. Maksimal 50MB.");
-      return;
-    }
-
     setIsUploading(true);
+    setUploadProgress(0);
+
     try {
-      const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
+      // Compression options
+      const options = {
+        maxSizeMB: 0.8, // Max 800KB
+        maxWidthOrHeight: 1280,
+        useWebWorker: true,
+        onProgress: (progress: number) => setUploadProgress(progress)
+      };
+
+      console.log(`Original size: ${file.size / 1024 / 1024} MB`);
+      
+      // Compress image
+      const compressedFile = await imageCompression(file, options);
+      console.log(`Compressed size: ${compressedFile.size / 1024 / 1024} MB`);
+
+      const storageRef = ref(storage, `products/${Date.now()}_${compressedFile.name}`);
+      const snapshot = await uploadBytes(storageRef, compressedFile);
       const url = await getDownloadURL(snapshot.ref);
+      
       onChange(index, 'fotoUrl', url);
     } catch (err) {
       console.error("Upload Error:", err);
       alert("Gagal mengunggah foto. Silakan coba lagi.");
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -123,7 +137,7 @@ export const ProductInputGroup: React.FC<ProductInputGroupProps> = ({ index, pro
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Foto Produk (Maks 50MB)</label>
+            <label className="text-sm font-semibold text-slate-700">Foto Produk</label>
             <div className="flex items-center gap-4">
               <div className="relative group">
                 <div className={`w-24 h-24 rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden transition-all ${product.fotoUrl ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
@@ -133,8 +147,11 @@ export const ProductInputGroup: React.FC<ProductInputGroupProps> = ({ index, pro
                     <ImageIcon className="text-slate-300" size={32} />
                   )}
                   {isUploading && (
-                    <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                      <Loader2 className="animate-spin text-red-600" size={24} />
+                    <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center p-2">
+                      <Loader2 className="animate-spin text-red-600 mb-1" size={20} />
+                      <span className="text-[8px] font-bold text-red-600 text-center leading-tight">
+                        {uploadProgress < 100 ? `Optimasi...` : 'Mengunggah...'}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -151,11 +168,13 @@ export const ProductInputGroup: React.FC<ProductInputGroupProps> = ({ index, pro
                     disabled={isUploading}
                   />
                 </label>
-                <p className="text-[10px] text-slate-400 italic">Format: JPG, PNG, WEBP (Maks 50MB)</p>
+                <p className="text-[10px] text-slate-400 italic leading-tight">
+                  Sistem akan mengoptimalkan ukuran foto secara otomatis agar pengiriman lebih cepat.
+                </p>
                 {product.fotoUrl && (
                   <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold uppercase">
                     <CheckCircle size={12} />
-                    Berhasil Diunggah
+                    Berhasil Dioptimasi & Diunggah
                   </div>
                 )}
               </div>
