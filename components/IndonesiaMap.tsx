@@ -29,7 +29,7 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
       },
       {
         url: 'https://raw.githubusercontent.com/anshori/indonesia-geojson/master/indonesia-provinces.json',
-        type: 'topojson'
+        type: 'geojson'
       }
     ];
 
@@ -45,6 +45,7 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.json();
+        console.log(`Map source ${index} loaded successfully (${source.type})`);
         
         if (source.type === 'topojson') {
           if (!data.objects) throw new Error("Invalid TopoJSON");
@@ -94,29 +95,45 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
         .attr("stroke-width", 0.5);
 
       // Draw points
-      const points = data.filter(d => d.latitude && d.longitude);
+      const points = data.filter(d => 
+        typeof d.latitude === 'number' && 
+        typeof d.longitude === 'number' &&
+        !isNaN(d.latitude) && 
+        !isNaN(d.longitude)
+      );
 
-      svg.append("g")
-        .selectAll("circle")
+      const gPoints = svg.append("g").attr("class", "points");
+      
+      gPoints.selectAll("circle")
         .data(points)
         .enter()
         .append("circle")
         .attr("cx", (d: any) => {
-          const coords = projection([d.longitude!, d.latitude!]);
+          const coords = projection([d.longitude, d.latitude]);
           return coords ? coords[0] : 0;
         })
         .attr("cy", (d: any) => {
-          const coords = projection([d.longitude!, d.latitude!]);
+          const coords = projection([d.longitude, d.latitude]);
           return coords ? coords[1] : 0;
         })
-        .attr("r", 4)
+        .attr("r", 5)
         .attr("fill", "#dc2626")
         .attr("stroke", "#ffffff")
-        .attr("stroke-width", 1)
-        .attr("opacity", 0.8)
+        .attr("stroke-width", 1.5)
+        .attr("opacity", 0.9)
         .style("cursor", "pointer")
+        .attr("class", "map-marker")
         .append("title")
-        .text((d: any) => `${d.namaLembaga}\n${d.desa}, ${d.kabupaten}`);
+        .text((d: any) => `${d.namaLembaga}\n${d.desa}, ${d.kabupaten}\nLat: ${d.latitude}, Long: ${d.longitude}`);
+
+      // Add a small count indicator
+      svg.append("text")
+        .attr("x", 10)
+        .attr("y", height - 10)
+        .attr("font-size", "10px")
+        .attr("fill", "#64748b")
+        .attr("font-weight", "bold")
+        .text(`Terpetakan: ${points.length} dari ${data.length} lembaga`);
     };
 
     updateMap();
