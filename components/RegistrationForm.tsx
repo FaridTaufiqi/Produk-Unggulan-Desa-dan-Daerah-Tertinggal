@@ -104,6 +104,7 @@ const initialProduct: VillageProduct = {
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, user }) => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -272,6 +273,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
     e.preventDefault();
     if (!user) return;
     setLoading(true);
+    setError(null);
+    
+    // Basic validation
+    if (form.nikResponden.replace(/\s/g, '').length !== 16) {
+      setError("NIK harus berjumlah 16 digit.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const id = `REG-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
@@ -279,6 +288,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
       // Prepare data for Firestore
       const submissionData = {
         ...form,
+        nikResponden: form.nikResponden.replace(/\s/g, ''), // Trim spaces from NIK
         id,
         uid: user.uid,
         timestamp: Date.now(),
@@ -311,9 +321,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
 
       setLoading(false);
       onSuccess(id);
-    } catch (error) {
+    } catch (err: any) {
       setLoading(false);
-      handleFirestoreError(error, OperationType.CREATE, 'submissions');
+      const errorMessage = err.message || String(err);
+      if (errorMessage.includes('permission-denied') || errorMessage.includes('insufficient permissions')) {
+        setError("Gagal mengirim: Pastikan semua data wajib diisi dengan benar (NIK harus 16 digit).");
+      } else {
+        setError("Terjadi kesalahan saat mengirim formulir. Silakan coba lagi.");
+      }
+      console.error("Submission Error:", err);
     }
   };
 
@@ -357,6 +373,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, u
 
   return (
     <form onSubmit={handleSubmit} className="space-y-12">
+      {/* Error Message Display */}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-bold text-sm">Gagal Mengirim Formulir</p>
+            <p className="text-xs mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* Section 1: Identitas Responden */}
       <div className="space-y-6">
         <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
