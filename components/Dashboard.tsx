@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { FormState, LembagaEkonomiType, UserProfile } from '../types';
 import { User, auth, signInWithPopup, googleProvider, db, doc, deleteDoc } from '../firebase';
+import { IndonesiaMap } from './IndonesiaMap';
 
 interface DashboardProps {
   data: (FormState & { id: string; timestamp: number; docId: string; uid: string })[];
@@ -430,6 +431,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
             </div>
           </div>
         </div>
+
+        {/* Map Section */}
+        <IndonesiaMap data={data as any} />
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
