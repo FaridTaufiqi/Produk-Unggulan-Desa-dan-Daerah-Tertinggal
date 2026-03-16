@@ -17,16 +17,32 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
   useEffect(() => {
     const MAP_SOURCES = [
       {
-        url: 'https://raw.githubusercontent.com/superpikar/indonesia-topojson/master/indonesia-provinces.json',
-        type: 'topojson'
-      },
-      {
         url: 'https://cdn.jsdelivr.net/gh/superpikar/indonesia-topojson@master/indonesia-provinces.json',
         type: 'topojson'
       },
       {
+        url: 'https://raw.githubusercontent.com/superpikar/indonesia-topojson/master/indonesia-provinces.json',
+        type: 'topojson'
+      },
+      {
+        url: 'https://cdn.jsdelivr.net/gh/anshori/indonesia-geojson@master/indonesia-provinces.json',
+        type: 'geojson'
+      },
+      {
         url: 'https://raw.githubusercontent.com/anshori/indonesia-geojson/master/indonesia-provinces.json',
         type: 'geojson'
+      },
+      {
+        url: 'https://raw.githubusercontent.com/superpikar/indonesia-topojson/main/indonesia-provinces.json',
+        type: 'topojson'
+      },
+      {
+        url: 'https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/indonesia.geojson',
+        type: 'geojson'
+      },
+      {
+        url: 'https://raw.githubusercontent.com/superpikar/indonesia-topojson/master/indonesia.json',
+        type: 'topojson'
       }
     ];
 
@@ -47,7 +63,13 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
         
         if (source.type === 'topojson') {
           if (!data.objects) throw new Error("Invalid TopoJSON");
-          const objectKey = Object.keys(data.objects)[0];
+          // Try to find a suitable object key (provinces, indonesia, etc)
+          const objectKey = Object.keys(data.objects).find(k => 
+            k.toLowerCase().includes('province') || 
+            k.toLowerCase().includes('indonesia') || 
+            k.toLowerCase().includes('states')
+          ) || Object.keys(data.objects)[0];
+          
           const geojson = feature(data, data.objects[objectKey]) as any;
           setGeoData(geojson);
         } else {
@@ -78,21 +100,51 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
       const width = svgRef.current.clientWidth || 800;
       const height = 400;
 
+      // Indonesia Bounding Box for fallback
+      const indonesiaBounds: any = {
+        type: "FeatureCollection",
+        features: [{
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [[[95, -11], [141, -11], [141, 6], [95, 6], [95, -11]]]
+          }
+        }]
+      };
+
       const projection = d3.geoMercator()
-        .fitSize([width, height], geoData);
+        .fitSize([width, height], geoData || indonesiaBounds);
 
       const path = d3.geoPath().projection(projection);
 
-      // Draw map
-      svg.append("g")
-        .selectAll("path")
-        .data(geoData.features)
-        .enter()
-        .append("path")
-        .attr("d", path as any)
-        .attr("fill", "#f1f5f9")
-        .attr("stroke", "#cbd5e1")
-        .attr("stroke-width", 0.5);
+      if (geoData) {
+        // Draw map
+        svg.append("g")
+          .selectAll("path")
+          .data(geoData.features)
+          .enter()
+          .append("path")
+          .attr("d", path as any)
+          .attr("fill", "#f1f5f9")
+          .attr("stroke", "#cbd5e1")
+          .attr("stroke-width", 0.5);
+      } else {
+        // Draw fallback grid
+        svg.append("rect")
+          .attr("width", width)
+          .attr("height", height)
+          .attr("fill", "#f8fafc")
+          .attr("stroke", "#e2e8f0")
+          .attr("stroke-dasharray", "4,4");
+          
+        svg.append("text")
+          .attr("x", width / 2)
+          .attr("y", height / 2)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#94a3b8")
+          .attr("font-size", "12px")
+          .text("Peta dasar tidak tersedia, menampilkan koordinat titik...");
+      }
 
       // Draw points
       const points = data.filter(d => {
@@ -156,7 +208,7 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
     updateMap();
     window.addEventListener('resize', updateMap);
     return () => window.removeEventListener('resize', updateMap);
-  }, [geoData, data]);
+  }, [geoData, data, loading]);
 
   return (
     <div className="w-full bg-white rounded-2xl border border-slate-200 p-6 shadow-sm overflow-hidden">
@@ -177,21 +229,6 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
             <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
             <p className="text-xs text-slate-400 font-medium">Memuat Peta Indonesia...</p>
           </div>
-        ) : error ? (
-          <div className="flex flex-col items-center gap-2 p-6 text-center">
-            <div className="w-10 h-10 bg-red-50 text-red-600 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <p className="text-xs text-red-600 font-bold">{error}</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="mt-2 px-4 py-2 bg-red-600 text-white text-[10px] font-bold rounded-lg hover:bg-red-700 transition-all"
-            >
-              Coba Lagi
-            </button>
-          </div>
         ) : (
           <svg 
             ref={svgRef} 
@@ -199,6 +236,11 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
           />
         )}
       </div>
+      {error && !loading && (
+        <p className="mt-2 text-[10px] text-amber-600 font-medium text-center bg-amber-50 py-1 rounded border border-amber-100">
+          ⚠️ {error} (Menampilkan mode koordinat terbatas)
+        </p>
+      )}
     </div>
   );
 };
