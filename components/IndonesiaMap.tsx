@@ -16,9 +16,9 @@ import { MapPin, AlertTriangle, Layers, RefreshCw, CheckCircle2 } from 'lucide-r
 if (typeof window !== 'undefined') {
   delete (L.Icon.Default.prototype as any)._getIconUrl;
   L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   });
 }
 
@@ -231,11 +231,41 @@ export const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ data }) => {
     if (points.length > 0 && mapRef.current && mappedCount === 0) {
       try {
         mapRef.current.fitBounds(cluster.getBounds(), { padding: [50, 50], maxZoom: 12 });
+        // Force a size recalculation after fitting bounds
+        setTimeout(() => {
+          mapRef.current?.invalidateSize();
+        }, 200);
       } catch (e) {
         console.warn("Could not fit bounds:", e);
       }
     }
   }, [data]);
+
+  /**
+   * Section 4: Map Resilience
+   * Ensures the map fills the container correctly
+   */
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      mapRef.current?.invalidateSize();
+    });
+
+    if (mapContainerRef.current) {
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
+    // Initial fix for gray areas
+    const timer = setTimeout(() => {
+      mapRef.current?.invalidateSize();
+    }, 500);
+
+    return () => {
+      resizeObserver.disconnect();
+      clearTimeout(timer);
+    };
+  }, [status]);
 
   const retryMap = () => {
     setBasemapIndex(0);
