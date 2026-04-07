@@ -219,7 +219,7 @@ const AppContent: React.FC = () => {
                       onClick={() => setView('dashboard')}
                       className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all border border-white/20"
                     >
-                      {user ? 'Lihat Dashboard' : 'Login Petugas'}
+                      {user ? 'Lihat Dashboard' : 'Login Dashboard'}
                     </button>
                   </div>
                   <div className="p-8">

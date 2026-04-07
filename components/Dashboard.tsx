@@ -26,6 +26,7 @@ import {
 import { FormState, LembagaEkonomiType, UserProfile } from '../types';
 import { User, auth, signInWithPopup, googleProvider, db, doc, deleteDoc, handleFirestoreError, OperationType } from '../firebase';
 import { IndonesiaMap } from './IndonesiaMap';
+import { LoginChoice } from './LoginChoice';
 
 interface DashboardProps {
   data: (FormState & { id: string; timestamp: number; docId: string; uid: string })[];
@@ -207,47 +208,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
-          <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock size={32} />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Akses Terbatas</h2>
-          <p className="text-slate-500 mb-8">Silakan login sebagai petugas untuk melihat statistik dan backlog pendaftaran.</p>
-          
-          {loginError && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl">
-              {loginError}
-            </div>
-          )}
-
-          <button 
-            onClick={handleLogin}
-            disabled={loginLoading}
-            className="w-full bg-red-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-red-700 transition-all shadow-lg shadow-red-100 flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {loginLoading ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Menghubungkan...
-              </>
-            ) : (
-              <>Login dengan Google</>
-            )}
-          </button>
-          
-          <button 
-            onClick={onBack}
-            className="mt-4 text-slate-500 hover:text-slate-700 font-medium flex items-center justify-center gap-2 mx-auto"
-          >
-            <ArrowLeft size={18} />
-            Kembali ke Beranda
-          </button>
-        </div>
-      </div>
+      <LoginChoice 
+        onLogin={handleLogin}
+        onBack={onBack}
+        loading={loginLoading}
+        error={loginError}
+      />
     );
   }
 
