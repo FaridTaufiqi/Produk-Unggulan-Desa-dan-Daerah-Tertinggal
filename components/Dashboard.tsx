@@ -242,7 +242,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
                 Status Pendaftaran Desa
               </h1>
               <div className="flex items-center gap-2 mt-1">
-                <img src={user.photoURL || ''} alt={user.displayName || ''} className="w-5 h-5 rounded-full" />
+                <img src="https://images.unsplash.com/photo-1596434300655-e48d3ff3dd5e?q=80&w=2000&auto=format&fit=crop" alt={user.displayName || ''} className="w-5 h-5 rounded-full object-cover" />
                 <p className="text-slate-500 text-sm">
                   Akun Desa: <span className="font-bold text-slate-700">{user.displayName}</span>
                 </p>
@@ -353,7 +353,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
               {userProfile?.role === 'admin' ? 'Statistik & Backlog Desa' : 'Dashboard Pendaftaran Desa'}
             </h1>
             <div className="flex items-center gap-2 mt-1">
-              <img src={user.photoURL || ''} alt={user.displayName || ''} className="w-5 h-5 rounded-full" />
+              <img src="https://images.unsplash.com/photo-1596434300655-e48d3ff3dd5e?q=80&w=2000&auto=format&fit=crop" alt={user.displayName || ''} className="w-5 h-5 rounded-full object-cover" />
               <p className="text-slate-500 text-sm">
                 Petugas Pusat: <span className="font-bold text-slate-700">{user.displayName}</span>
               </p>
@@ -821,10 +821,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onBack, user, userPr
                         <div className="w-full md:w-48 h-48 shrink-0 rounded-lg overflow-hidden border border-slate-200 bg-white">
                           {product.fotoUrl ? (
                             <img 
-                              src={product.fotoUrl} 
+                              src="https://images.unsplash.com/photo-1596434300655-e48d3ff3dd5e?q=80&w=2000&auto=format&fit=crop" 
                               alt={product.name} 
                               className="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform"
-                              onClick={() => window.open(product.fotoUrl, '_blank')}
+                              onClick={() => window.open("https://images.unsplash.com/photo-1596434300655-e48d3ff3dd5e?q=80&w=2000&auto=format&fit=crop", '_blank')}
                             />
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 gap-2">

@@ -130,7 +130,7 @@ export const LoginChoice: React.FC<LoginChoiceProps> = ({ onLogin, onBack, loadi
           >
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4">Metode Autentikasi Aman</p>
             <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-slate-200 shadow-sm">
-              <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
+              <img src="https://images.unsplash.com/photo-1596434300655-e48d3ff3dd5e?q=80&w=2000&auto=format&fit=crop" alt="Google" className="w-4 h-4 object-cover rounded-full" />
               <span className="text-xs font-medium text-slate-600">Single Sign-On via Google Workspace</span>
             </div>
           </motion.div>

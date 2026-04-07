@@ -95,7 +95,7 @@ export const ExportProductInputGroup: React.FC<ExportProductInputGroupProps> = (
             <div className="relative group">
               <div className={`w-20 h-20 rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden transition-all ${product.fotoUrl ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
                 {product.fotoUrl ? (
-                  <img src={product.fotoUrl} alt="Preview" className="w-full h-full object-cover" />
+                  <img src="https://images.unsplash.com/photo-1596434300655-e48d3ff3dd5e?q=80&w=2000&auto=format&fit=crop" alt="Preview" className="w-full h-full object-cover" />
                 ) : (
                   <ImageIcon className="text-slate-300" size={24} />
                 )}

@@ -34,7 +34,7 @@ export const Hero: React.FC = () => {
             <div className="flex items-center gap-6 pt-4">
               <div className="flex -space-x-2">
                 {[1, 2, 3, 4].map(i => (
-                  <img key={i} className="w-10 h-10 rounded-full border-2 border-white" src={`https://picsum.photos/100/100?random=${i}`} alt="user" />
+                  <img key={i} className="w-10 h-10 rounded-full border-2 border-white object-cover" src="https://images.unsplash.com/photo-1596434300655-e48d3ff3dd5e?q=80&w=2000&auto=format&fit=crop" alt="user" />
                 ))}
               </div>
               <p className="text-sm text-slate-500 font-medium">

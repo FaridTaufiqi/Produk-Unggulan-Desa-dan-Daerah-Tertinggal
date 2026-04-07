@@ -28,9 +28,9 @@ export const Header: React.FC<HeaderProps> = ({ onDashboardClick, onHomeClick, u
         >
           <div className="w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110">
             <img 
-              src="https://upload.wikimedia.org/wikipedia/commons/a/ae/Kemendes_Logo_%282015%29.png" 
+              src="https://images.unsplash.com/photo-1596434300655-e48d3ff3dd5e?q=80&w=2000&auto=format&fit=crop" 
               alt="Logo Kemendes" 
-              className="w-full h-auto object-contain"
+              className="w-full h-full object-cover"
             />
           </div>
           <div className="border-l border-slate-200 pl-3 h-10 flex flex-col justify-center">
@@ -62,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({ onDashboardClick, onHomeClick, u
                     {(userProfile?.role === 'admin' || user?.email === 'faridtaufiqibusiness@gmail.com') ? 'admin' : 'desa'}
                   </p>
                 </div>
-                <img src={user.photoURL || ''} alt={user.displayName || ''} className="w-8 h-8 rounded-full border border-slate-200" />
+                <img src="https://images.unsplash.com/photo-1596434300655-e48d3ff3dd5e?q=80&w=2000&auto=format&fit=crop" alt={user.displayName || ''} className="w-8 h-8 rounded-full border border-slate-200 object-cover" />
                 <button onClick={handleLogout} className="text-xs font-bold text-slate-500 hover:text-red-600">Logout</button>
               </div>
             </div>
