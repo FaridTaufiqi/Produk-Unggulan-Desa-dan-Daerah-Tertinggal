@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { ShieldCheck, Home, ArrowRight, AlertCircle, RefreshCw, LogIn } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface LoginChoiceProps {
   onLogin: () => void;
@@ -12,25 +13,44 @@ interface LoginChoiceProps {
 export const LoginChoice: React.FC<LoginChoiceProps> = ({ onLogin, onBack, loading, error }) => {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-2xl w-full"
+      >
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-600 text-white rounded-2xl shadow-xl shadow-red-200 mb-6">
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            className="inline-flex items-center justify-center w-16 h-16 bg-red-600 text-white rounded-2xl shadow-xl shadow-red-200 mb-6"
+          >
             <LogIn size={32} />
-          </div>
+          </motion.div>
           <h2 className="text-3xl font-bold text-slate-900 mb-3">Pintu Masuk Sistem</h2>
           <p className="text-slate-500">Silakan pilih jenis akses Anda untuk melanjutkan ke dashboard.</p>
         </div>
 
-        {error && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-            <AlertCircle size={20} className="shrink-0" />
-            <p className="font-medium">{error}</p>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+              animate={{ opacity: 1, height: 'auto', marginBottom: 32 }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm flex items-center gap-3 overflow-hidden"
+            >
+              <AlertCircle size={20} className="shrink-0" />
+              <p className="font-medium">{error}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Admin Choice */}
-          <button
+          <motion.button
+            whileHover={{ y: -8, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={onLogin}
             disabled={loading}
             className="group relative bg-white p-8 rounded-3xl border-2 border-slate-100 hover:border-red-600 hover:shadow-2xl hover:shadow-red-100 transition-all duration-300 text-left overflow-hidden disabled:opacity-50"
@@ -58,10 +78,12 @@ export const LoginChoice: React.FC<LoginChoiceProps> = ({ onLogin, onBack, loadi
                 </>
               )}
             </div>
-          </button>
+          </motion.button>
 
           {/* Desa Choice */}
-          <button
+          <motion.button
+            whileHover={{ y: -8, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={onLogin}
             disabled={loading}
             className="group relative bg-white p-8 rounded-3xl border-2 border-slate-100 hover:border-blue-600 hover:shadow-2xl hover:shadow-blue-100 transition-all duration-300 text-left overflow-hidden disabled:opacity-50"
@@ -89,7 +111,7 @@ export const LoginChoice: React.FC<LoginChoiceProps> = ({ onLogin, onBack, loadi
                 </>
               )}
             </div>
-          </button>
+          </motion.button>
         </div>
 
         <div className="mt-12 text-center">
@@ -100,15 +122,20 @@ export const LoginChoice: React.FC<LoginChoiceProps> = ({ onLogin, onBack, loadi
             Batal dan Kembali ke Beranda
           </button>
           
-          <div className="mt-8 pt-8 border-t border-slate-200 flex flex-col items-center">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="mt-8 pt-8 border-t border-slate-200 flex flex-col items-center"
+          >
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4">Metode Autentikasi Aman</p>
             <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-slate-200 shadow-sm">
               <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
               <span className="text-xs font-medium text-slate-600">Single Sign-On via Google Workspace</span>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

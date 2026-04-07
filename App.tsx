@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, ErrorInfo, ReactNode } from 'react';
+import React, { useState, useEffect, ErrorInfo, ReactNode, Component } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { RegistrationForm } from './components/RegistrationForm';
@@ -9,6 +9,7 @@ import { Dashboard } from './components/Dashboard';
 import { FormState, UserProfile } from './types';
 import { auth, db, collection, onSnapshot, query, orderBy, onAuthStateChanged, User, doc, getDoc, setDoc, where, handleFirestoreError, OperationType } from './firebase';
 import { AlertCircle, RefreshCcw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Error Boundary Component
 interface ErrorBoundaryProps {
@@ -20,7 +21,7 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = {
     hasError: false,
     error: null
@@ -42,7 +43,11 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center"
+          >
             <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertCircle size={32} />
             </div>
@@ -55,7 +60,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
               <RefreshCcw size={20} />
               Muat Ulang Halaman
             </button>
-          </div>
+          </motion.div>
         </div>
       );
     }
@@ -190,52 +195,69 @@ const AppContent: React.FC = () => {
     );
   }
 
-  if (view === 'dashboard') {
-    return <Dashboard data={submissions} onBack={() => setView('home')} user={user} userProfile={userProfile} />;
-  }
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header 
-        onDashboardClick={() => setView('dashboard')} 
-        onHomeClick={() => setView('home')} 
-        user={user} 
-        userProfile={userProfile} 
-      />
-      
-      <main className="flex-grow">
-        {!submitted ? (
-          <>
-            <Hero />
-            <section id="form-section" className="py-12 bg-slate-50">
-              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-                  <div className="bg-red-600 px-8 py-6 flex justify-between items-center">
-                    <div>
-                      <h2 className="text-2xl font-bold text-white">Formulir Identifikasi Produk</h2>
-                      <p className="text-red-100 mt-1">Lengkapi data untuk memajukan ekonomi desa Anda.</p>
+    <AnimatePresence mode="wait">
+      {view === 'dashboard' ? (
+        <motion.div
+          key="dashboard"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Dashboard data={submissions} onBack={() => setView('home')} user={user} userProfile={userProfile} />
+        </motion.div>
+      ) : (
+        <motion.div 
+          key="home"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="min-h-screen flex flex-col"
+        >
+          <Header 
+            onDashboardClick={() => setView('dashboard')} 
+            onHomeClick={() => setView('home')} 
+            user={user} 
+            userProfile={userProfile} 
+          />
+          
+          <main className="flex-grow">
+            {!submitted ? (
+              <>
+                <Hero />
+                <section id="form-section" className="py-12 bg-slate-50">
+                  <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+                      <div className="bg-red-600 px-8 py-6 flex justify-between items-center">
+                        <div>
+                          <h2 className="text-2xl font-bold text-white">Formulir Identifikasi Produk</h2>
+                          <p className="text-red-100 mt-1">Lengkapi data untuk memajukan ekonomi desa Anda.</p>
+                        </div>
+                        <button 
+                          onClick={() => setView('dashboard')}
+                          className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all border border-white/20"
+                        >
+                          {user ? 'Lihat Dashboard' : 'Login Dashboard'}
+                        </button>
+                      </div>
+                      <div className="p-8">
+                        <RegistrationForm onSuccess={handleSuccess} user={user} />
+                      </div>
                     </div>
-                    <button 
-                      onClick={() => setView('dashboard')}
-                      className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all border border-white/20"
-                    >
-                      {user ? 'Lihat Dashboard' : 'Login Dashboard'}
-                    </button>
                   </div>
-                  <div className="p-8">
-                    <RegistrationForm onSuccess={handleSuccess} user={user} />
-                  </div>
-                </div>
-              </div>
-            </section>
-          </>
-        ) : (
-          <SubmissionSuccess id={submissionId} onReset={handleReset} />
-        )}
-      </main>
+                </section>
+              </>
+            ) : (
+              <SubmissionSuccess id={submissionId} onReset={handleReset} />
+            )}
+          </main>
 
-      <Footer />
-    </div>
+          <Footer />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
